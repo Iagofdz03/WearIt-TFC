@@ -1,0 +1,43 @@
+package com.wearit.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "prenda")
+@Data
+@NoArgsConstructor
+public class Prenda {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
+    private String nombre;
+    private String tipo;
+    private String color;
+    private String estilo;
+    private String temporada;
+    private String fotoUrl;
+
+    @Column(name = "fecha_anadida")
+    private java.time.LocalDateTime fechaAnadida;
+
+    @PrePersist
+    protected void onCreate() {
+        fechaAnadida = java.time.LocalDateTime.now();
+    }
+}
