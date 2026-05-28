@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import '../../api/api_service.dart';
 import 'outfit_form_screen.dart';
-import 'outfit_form_screen.dart';
+import 'outfit_creator_screen.dart';
 import '../../theme/app_theme.dart';
 
 class OutfitsScreen extends StatefulWidget {
@@ -92,7 +92,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
             icon: const Icon(Icons.add),
             onPressed: () async {
               await Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => OutfitFormScreen(userId: _userId!)));
+                  MaterialPageRoute(builder: (_) => OutfitCreatorScreen(userId: _userId!)));
               await _loadOutfits();
             },
           ),
@@ -135,7 +135,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
             ElevatedButton.icon(
               onPressed: () async {
                 await Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => OutfitFormScreen(userId: _userId!)));
+                    MaterialPageRoute(builder: (_) => OutfitCreatorScreen(userId: _userId!)));
                 await _loadOutfits();
               },
               icon: const Icon(Icons.add, size: 16),

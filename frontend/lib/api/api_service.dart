@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Cambia esto a tu IP local cuando pruebes en dispositivo físico
+  // Emulador Android: 10.0.2.2 | Dispositivo físico: IP de tu ordenador
   static const String baseUrl = 'http://10.0.2.2:8080/api';
 
   static Future<String?> getToken() async {
@@ -113,7 +113,8 @@ class ApiService {
       url = '$baseUrl/prendas/usuario/$usuarioId/filtrar';
     }
 
-    final uri = Uri.parse(url).replace(queryParameters: params.isNotEmpty ? params : null);
+    final uri = Uri.parse(url)
+        .replace(queryParameters: params.isNotEmpty ? params : null);
     final res = await http.get(uri, headers: await _headers());
     if (res.statusCode == 200) return jsonDecode(res.body);
     throw Exception('Error al obtener prendas');
@@ -121,11 +122,16 @@ class ApiService {
 
   static Future<Map<String, dynamic>> crearPrenda(
       Map<String, dynamic> prenda) async {
+    print('>>> Creando prenda: ${jsonEncode(prenda)}');
+    final token = await getToken();
+    print('>>> Token: $token');
     final res = await http.post(
       Uri.parse('$baseUrl/prendas'),
       headers: await _headers(),
       body: jsonEncode(prenda),
     );
+    print('>>> Status crear prenda: ${res.statusCode}');
+    print('>>> Body crear prenda: ${res.body}');
     if (res.statusCode == 200 || res.statusCode == 201) {
       return jsonDecode(res.body);
     }
@@ -222,7 +228,7 @@ class ApiService {
       headers: await _headers(),
     );
     if (res.statusCode == 200) return jsonDecode(res.body);
-    throw Exception('Error');
+    throw Exception('Error al obtener estado like');
   }
 
   static Future<void> darLike(int usuarioId, int outfitId) async {
@@ -231,7 +237,7 @@ class ApiService {
       headers: await _headers(),
       body: jsonEncode({
         'usuario': {'id': usuarioId},
-        'outfit': {'id': outfitId}
+        'outfit': {'id': outfitId},
       }),
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
@@ -264,7 +270,7 @@ class ApiService {
       headers: await _headers(),
       body: jsonEncode({
         'usuario': {'id': usuarioId},
-        'outfit': {'id': outfitId}
+        'outfit': {'id': outfitId},
       }),
     );
     if (res.statusCode != 200 && res.statusCode != 201) {
@@ -306,10 +312,13 @@ class ApiService {
   // ─── TIEMPO ─────────────────────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>> getTiempo(String ciudad) async {
+    print('>>> GET tiempo: $baseUrl/tiempo/$ciudad');
     final res = await http.get(
       Uri.parse('$baseUrl/tiempo/$ciudad'),
       headers: await _headers(),
     );
+    print('>>> Status: ${res.statusCode}');
+    print('>>> Body: ${res.body}');
     if (res.statusCode == 200) return jsonDecode(res.body);
     throw Exception('Error al obtener el tiempo');
   }
@@ -317,6 +326,7 @@ class ApiService {
   // ─── IMÁGENES ───────────────────────────────────────────────────────────────
 
   static Future<String> subirImagen(List<int> bytes, String filename) async {
+    print('>>> Subiendo imagen a: $baseUrl/imagenes/subir');
     final token = await getToken();
     final request = http.MultipartRequest(
       'POST',
@@ -328,9 +338,21 @@ class ApiService {
     );
     final response = await request.send();
     final body = await response.stream.bytesToString();
+    print('>>> Status subir: ${response.statusCode}');
+    print('>>> Body subir: $body');
     if (response.statusCode == 200) {
       return jsonDecode(body)['url'];
     }
     throw Exception('Error al subir imagen');
+  }
+
+  static Future<String> removeBg(String imageUrl) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/imagenes/remove-bg'),
+      headers: await _headers(),
+      body: jsonEncode({'url': imageUrl}),
+    );
+    if (res.statusCode == 200) return jsonDecode(res.body)['url'];
+    throw Exception('Error al quitar fondo');
   }
 }
