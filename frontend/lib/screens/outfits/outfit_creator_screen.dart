@@ -54,13 +54,15 @@ const _presets = [
 class _PlacedItem {
   final Map<String, dynamic> prenda;
   Offset position;
+  // ValueNotifier para posición — evita setState en cada frame de arrastre
+  late ValueNotifier<Offset> positionNotifier;
   double scale;
   double brightness;
   double contrast;
   double saturation;
   bool removeBgApplied;
   String? processedUrl;
-  bool removingBg; // estado de carga
+  bool removingBg;
 
   _PlacedItem({
     required this.prenda,
@@ -72,7 +74,13 @@ class _PlacedItem {
     this.removeBgApplied = false,
     this.processedUrl,
     this.removingBg = false,
-  });
+  }) {
+    positionNotifier = ValueNotifier<Offset>(position);
+  }
+
+  void dispose() {
+    positionNotifier.dispose();
+  }
 
   String get tipo => (prenda['tipo'] ?? 'accesorio').toString().toLowerCase();
   String get imageUrl => processedUrl ?? prenda['fotoUrl'] ?? '';
@@ -116,10 +124,10 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
   bool _saving = false;
 
   final Map<String, List<String>> _categorias = {
-    'Tops':       ['camiseta', 'top', 'jersey', 'chaqueta'],
+    'Tops': ['camiseta', 'top', 'jersey', 'chaqueta'],
     'Pantalones': ['pantalón', 'falda', 'vestido'],
-    'Zapatos':    ['zapatos'],
-    'Extras':     ['collar', 'bolso', 'accesorio'],
+    'Zapatos': ['zapatos'],
+    'Extras': ['collar', 'bolso', 'accesorio'],
   };
 
   @override
@@ -131,13 +139,20 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
   @override
   void dispose() {
     _nombreCtrl.dispose();
+    // Libera todos los ValueNotifier de las prendas colocadas
+    for (final item in _placed) {
+      item.dispose();
+    }
     super.dispose();
   }
 
   Future<void> _loadArmario() async {
     try {
       final data = await ApiService.getPrendas(widget.userId);
-      if (mounted) setState(() { _armario = data; _loadingArmario = false; });
+      if (mounted) setState(() {
+        _armario = data;
+        _loadingArmario = false;
+      });
     } catch (_) {
       if (mounted) setState(() => _loadingArmario = false);
     }
@@ -204,7 +219,9 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
               backgroundColor: AppTheme.error));
       return;
     }
-    if (_nombreCtrl.text.trim().isEmpty) {
+    if (_nombreCtrl.text
+        .trim()
+        .isEmpty) {
       _showNombreDialog();
       return;
     }
@@ -239,65 +256,83 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
     String dialogOcasion = _ocasion;
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.background,
-          title: Text('Guardar outfit',
-              style: GoogleFonts.cormorant(fontSize: 20)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nombreCtrl,
-                autofocus: true,
-                style: GoogleFonts.dmSans(fontSize: 14),
-                decoration: const InputDecoration(hintText: 'ej. Look del lunes'),
-              ),
-              const SizedBox(height: 16),
-              Row(children: [
-                Text('Ocasión:', style: GoogleFonts.dmSans(fontSize: 13)),
-                const SizedBox(width: 12),
-                DropdownButton<String>(
-                  value: dialogOcasion,
-                  dropdownColor: AppTheme.background,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13, color: AppTheme.textPrimary),
-                  items: ['casual','trabajo','fiesta','deporte','formal']
-                      .map((o) => DropdownMenuItem(value: o, child: Text(o)))
-                      .toList(),
-                  onChanged: (v) => setDialogState(() => dialogOcasion = v!),
-                ),
-              ]),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Público', style: GoogleFonts.dmSans(fontSize: 13)),
-                  Switch(
-                    value: dialogPublico,
-                    onChanged: (v) => setDialogState(() => dialogPublico = v),
-                    activeColor: AppTheme.accent,
+      builder: (ctx) =>
+          StatefulBuilder(
+            builder: (ctx, setDialogState) =>
+                AlertDialog(
+                  backgroundColor: AppTheme.background,
+                  title: Text('Guardar outfit',
+                      style: GoogleFonts.cormorant(fontSize: 20)),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: _nombreCtrl,
+                        autofocus: true,
+                        style: GoogleFonts.dmSans(fontSize: 14),
+                        decoration: const InputDecoration(
+                            hintText: 'ej. Look del lunes'),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(children: [
+                        Text('Ocasión:',
+                            style: GoogleFonts.dmSans(fontSize: 13)),
+                        const SizedBox(width: 12),
+                        DropdownButton<String>(
+                          value: dialogOcasion,
+                          dropdownColor: AppTheme.background,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 13, color: AppTheme.textPrimary),
+                          items: [
+                            'casual',
+                            'trabajo',
+                            'fiesta',
+                            'deporte',
+                            'formal'
+                          ]
+                              .map((o) =>
+                              DropdownMenuItem(value: o, child: Text(o)))
+                              .toList(),
+                          onChanged: (v) =>
+                              setDialogState(() => dialogOcasion = v!),
+                        ),
+                      ]),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Público',
+                              style: GoogleFonts.dmSans(fontSize: 13)),
+                          Switch(
+                            value: dialogPublico,
+                            onChanged: (v) =>
+                                setDialogState(() => dialogPublico = v),
+                            activeColor: AppTheme.accent,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text('Cancelar',
+                            style: GoogleFonts.dmSans(
+                                color: AppTheme.textSecondary))),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _esPublico = dialogPublico;
+                          _ocasion = dialogOcasion;
+                        });
+                        Navigator.pop(ctx);
+                        _guardarOutfit();
+                      },
+                      child: const Text('GUARDAR'),
+                    ),
+                  ],
+                ),
           ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('Cancelar',
-                    style: GoogleFonts.dmSans(color: AppTheme.textSecondary))),
-            ElevatedButton(
-              onPressed: () {
-                setState(() { _esPublico = dialogPublico; _ocasion = dialogOcasion; });
-                Navigator.pop(ctx);
-                _guardarOutfit();
-              },
-              child: const Text('GUARDAR'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -365,7 +400,12 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                 ],
               ),
             ),
-          ..._placed.map((item) => _buildDraggableItem(item)),
+          ..._placed.map((item) =>
+              _DraggablePrenda(
+                key: ValueKey(item.prenda['id']),
+                item: item,
+                onLongPress: () => _showItemOptions(item),
+              )),
           if (_placed.isNotEmpty)
             Positioned(
               top: 8, right: 8,
@@ -395,49 +435,54 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
   }
 
   Widget _buildDraggableItem(_PlacedItem item) {
-    return Positioned(
-      left: item.position.dx,
-      top: item.position.dy,
-      child: GestureDetector(
-        onPanUpdate: (d) {
-          setState(() {
-            item.position = Offset(
-              item.position.dx + d.delta.dx,
-              item.position.dy + d.delta.dy,
-            );
-          });
-        },
-        onLongPress: () => _showItemOptions(item),
-        child: item.removingBg
-            ? SizedBox(
-            width: 130 * item.scale,
-            height: 130 * item.scale,
-            child: const Center(
-                child: CircularProgressIndicator(
-                    color: AppTheme.accent, strokeWidth: 2)))
-            : ColorFiltered(
-          colorFilter: item.buildColorFilter(),
-          child: SizedBox(
-            width: 130 * item.scale,
-            height: 130 * item.scale,
-            // Si tiene fondo quitado usa Image.memory con base64
-            // Si no, usa CachedNetworkImage normal
-            child: item.removeBgApplied && item.processedUrl != null
-                ? Image.memory(
-              base64Decode(item.processedUrl!),
-              fit: BoxFit.contain,
-            )
-                : item.imageUrl.isNotEmpty
-                ? CachedNetworkImage(
-              imageUrl: item.imageUrl,
-              fit: BoxFit.contain,
-              errorWidget: (_, __, ___) =>
-                  _prendaPlaceholder(item.tipo),
-            )
-                : _prendaPlaceholder(item.tipo),
+    return ValueListenableBuilder<Offset>(
+      valueListenable: item.positionNotifier,
+      builder: (_, pos, __) =>
+          Positioned(
+            left: pos.dx,
+            top: pos.dy,
+            child: GestureDetector(
+              onPanUpdate: (d) {
+                // Solo actualiza el notifier — no llama a setState
+                item.positionNotifier.value = Offset(
+                  item.positionNotifier.value.dx + d.delta.dx,
+                  item.positionNotifier.value.dy + d.delta.dy,
+                );
+              },
+              onPanEnd: (_) {
+                // Sincroniza position al soltar para que el modelo quede actualizado
+                setState(() => item.position = item.positionNotifier.value);
+              },
+              onLongPress: () => _showItemOptions(item),
+              child: item.removingBg
+                  ? SizedBox(
+                  width: 130 * item.scale,
+                  height: 130 * item.scale,
+                  child: const Center(
+                      child: CircularProgressIndicator(
+                          color: AppTheme.accent, strokeWidth: 2)))
+                  : ColorFiltered(
+                colorFilter: item.buildColorFilter(),
+                child: SizedBox(
+                  width: 130 * item.scale,
+                  height: 130 * item.scale,
+                  child: item.removeBgApplied && item.processedUrl != null
+                      ? Image.memory(
+                    base64Decode(item.processedUrl!),
+                    fit: BoxFit.contain,
+                  )
+                      : item.imageUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                    imageUrl: item.imageUrl,
+                    fit: BoxFit.contain,
+                    errorWidget: (_, __, ___) =>
+                        _prendaPlaceholder(item.tipo),
+                  )
+                      : _prendaPlaceholder(item.tipo),
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -449,121 +494,147 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheet) => Padding(
-          padding: EdgeInsets.fromLTRB(
-              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(item.nombre,
-                  style: GoogleFonts.cormorant(
-                      fontSize: 20, fontWeight: FontWeight.w500)),
-              Text('Mantén pulsado para abrir opciones',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11, color: AppTheme.textSecondary)),
-              const Divider(height: 24),
+      builder: (ctx) =>
+          StatefulBuilder(
+            builder: (ctx, setSheet) =>
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                      20, 20, 20, MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item.nombre,
+                          style: GoogleFonts.cormorant(
+                              fontSize: 20, fontWeight: FontWeight.w500)),
+                      Text('Mantén pulsado para abrir opciones',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11, color: AppTheme.textSecondary)),
+                      const Divider(height: 24),
 
-              // Tamaño
-              Text('Tamaño: ${(item.scale * 100).toStringAsFixed(0)}%',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 12, fontWeight: FontWeight.w600)),
-              Slider(
-                value: item.scale, min: 0.2, max: 1.4,
-                activeColor: AppTheme.accent,
-                onChanged: (v) => setSheet(() {
-                  item.scale = v;
-                  setState(() {});
-                }),
-              ),
-
-              const Divider(height: 16),
-
-              // Filtros — presets rápidos
-              Text('Filtros',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 12, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 32,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: _presets.map((p) => Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: GestureDetector(
-                      onTap: () => setSheet(() {
-                        item.brightness = p.brightness;
-                        item.contrast   = p.contrast;
-                        item.saturation = p.saturation;
-                        setState(() {});
-                      }),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardBg,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.border),
-                        ),
-                        child: Text(p.name,
-                            style: GoogleFonts.dmSans(fontSize: 11)),
+                      // Tamaño
+                      Text('Tamaño: ${(item.scale * 100).toStringAsFixed(0)}%',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12, fontWeight: FontWeight.w600)),
+                      Slider(
+                        value: item.scale,
+                        min: 0.2,
+                        max: 1.4,
+                        activeColor: AppTheme.accent,
+                        onChanged: (v) =>
+                            setSheet(() {
+                              item.scale = v;
+                              setState(() {});
+                            }),
                       ),
-                    ),
-                  )).toList(),
-                ),
-              ),
-              const SizedBox(height: 10),
 
-              // Sliders individuales
-              _sheetSlider('Brillo', item.brightness, 0.5, 1.5, (v) {
-                setSheet(() { item.brightness = v; setState(() {}); });
-              }),
-              _sheetSlider('Contraste', item.contrast, 0.5, 1.5, (v) {
-                setSheet(() { item.contrast = v; setState(() {}); });
-              }),
-              _sheetSlider('Saturación', item.saturation, 0.0, 2.0, (v) {
-                setSheet(() { item.saturation = v; setState(() {}); });
-              }),
+                      const Divider(height: 16),
 
-              const Divider(height: 20),
+                      // Filtros — presets rápidos
+                      Text('Filtros',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 32,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: _presets.map((p) =>
+                              Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setSheet(() {
+                                        item.brightness = p.brightness;
+                                        item.contrast = p.contrast;
+                                        item.saturation = p.saturation;
+                                        setState(() {});
+                                      }),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.cardBg,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                          color: AppTheme.border),
+                                    ),
+                                    child: Text(p.name,
+                                        style: GoogleFonts.dmSans(
+                                            fontSize: 11)),
+                                  ),
+                                ),
+                              )).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
 
-              // Acciones
-              Row(children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: item.removeBgApplied ? null : () {
-                      Navigator.pop(ctx);
-                      _removeBg(item);
-                    },
-                    icon: const Icon(Icons.auto_fix_high, size: 15),
-                    label: Text(
-                        item.removeBgApplied ? 'Fondo quitado' : 'Quitar fondo',
-                        style: GoogleFonts.dmSans(fontSize: 12)),
-                    style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppTheme.border)),
+                      // Sliders individuales
+                      _sheetSlider('Brillo', item.brightness, 0.5, 1.5, (v) {
+                        setSheet(() {
+                          item.brightness = v;
+                          setState(() {});
+                        });
+                      }),
+                      _sheetSlider('Contraste', item.contrast, 0.5, 1.5, (v) {
+                        setSheet(() {
+                          item.contrast = v;
+                          setState(() {});
+                        });
+                      }),
+                      _sheetSlider(
+                          'Saturación', item.saturation, 0.0, 2.0, (v) {
+                        setSheet(() {
+                          item.saturation = v;
+                          setState(() {});
+                        });
+                      }),
+
+                      const Divider(height: 20),
+
+                      // Acciones
+                      Row(children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: item.removeBgApplied ? null : () {
+                              Navigator.pop(ctx);
+                              _removeBg(item);
+                            },
+                            icon: const Icon(Icons.auto_fix_high, size: 15),
+                            label: Text(
+                                item.removeBgApplied
+                                    ? 'Fondo quitado'
+                                    : 'Quitar fondo',
+                                style: GoogleFonts.dmSans(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: AppTheme.border)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              setState(() =>
+                                  _placed.removeWhere(
+                                          (p) =>
+                                      p.prenda['id'] == item.prenda['id']));
+                              Navigator.pop(ctx);
+                            },
+                            icon: const Icon(Icons.delete_outline, size: 15),
+                            label: Text('Quitar',
+                                style: GoogleFonts.dmSans(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.error),
+                          ),
+                        ),
+                      ]),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() => _placed.removeWhere(
-                              (p) => p.prenda['id'] == item.prenda['id']));
-                      Navigator.pop(ctx);
-                    },
-                    icon: const Icon(Icons.delete_outline, size: 15),
-                    label: Text('Quitar',
-                        style: GoogleFonts.dmSans(fontSize: 12)),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.error),
-                  ),
-                ),
-              ]),
-            ],
           ),
-        ),
-      ),
     );
   }
 
@@ -578,7 +649,9 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
       ),
       Expanded(
         child: Slider(
-          value: value, min: min, max: max,
+          value: value,
+          min: min,
+          max: max,
           activeColor: AppTheme.accent,
           inactiveColor: AppTheme.border,
           onChanged: onChanged,
@@ -737,11 +810,102 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
 
   IconData _tipoIcon(String tipo) {
     switch (tipo.toLowerCase()) {
-      case 'zapatos': return Icons.directions_walk;
+      case 'zapatos':
+        return Icons.directions_walk;
       case 'collar':
-      case 'accesorio': return Icons.diamond_outlined;
-      case 'bolso': return Icons.shopping_bag_outlined;
-      default: return Icons.checkroom_outlined;
+      case 'accesorio':
+        return Icons.diamond_outlined;
+      case 'bolso':
+        return Icons.shopping_bag_outlined;
+      default:
+        return Icons.checkroom_outlined;
     }
+  }
+}
+
+class _DraggablePrenda extends StatefulWidget {
+  final _PlacedItem item;
+  final VoidCallback onLongPress;
+
+  const _DraggablePrenda({
+    super.key,
+    required this.item,
+    required this.onLongPress,
+  });
+
+  @override
+  State<_DraggablePrenda> createState() => _DraggablePrendaState();
+}
+
+class _DraggablePrendaState extends State<_DraggablePrenda> {
+  late Offset _position;
+
+  @override
+  void initState() {
+    super.initState();
+    _position = widget.item.position;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final size = 130 * item.scale;
+
+    return Positioned(
+      left: _position.dx,
+      top: _position.dy,
+      // RepaintBoundary aisla este widget del repaint del padre
+      child: RepaintBoundary(
+        child: GestureDetector(
+          onPanUpdate: (d) {
+            setState(() {
+              _position = Offset(
+                _position.dx + d.delta.dx,
+                _position.dy + d.delta.dy,
+              );
+              item.position = _position;
+            });
+          },
+          onLongPress: widget.onLongPress,
+          child: item.removingBg
+              ? SizedBox(
+              width: size, height: size,
+              child: const Center(
+                  child: CircularProgressIndicator(
+                      color: AppTheme.accent, strokeWidth: 2)))
+              : ColorFiltered(
+            colorFilter: item.buildColorFilter(),
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: item.removeBgApplied && item.processedUrl != null
+                  ? Image.memory(
+                base64Decode(item.processedUrl!),
+                fit: BoxFit.contain,
+                gaplessPlayback: true, // evita parpadeo al rebuild
+              )
+                  : item.imageUrl.isNotEmpty
+                  ? Image.network(
+                item.imageUrl,
+                fit: BoxFit.contain,
+                gaplessPlayback: true, // clave anti-parpadeo
+                errorBuilder: (_, __, ___) => Container(
+                  color: AppTheme.border,
+                  child: const Icon(Icons.checkroom_outlined,
+                      size: 28,
+                      color: AppTheme.textSecondary),
+                ),
+              )
+                  : Container(
+                color: AppTheme.border,
+                child: const Icon(Icons.checkroom_outlined,
+                    size: 28,
+                    color: AppTheme.textSecondary),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

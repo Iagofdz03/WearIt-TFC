@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter/material.dart';
 import '../../api/api_service.dart';
 import '../../theme/app_theme.dart';
+import 'dart:convert';
 
 class PrendaFormScreen extends StatefulWidget {
   final int userId;
@@ -25,10 +25,14 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
   String? _fotoUrl;
   bool _loading = false;
   bool _uploadingImg = false;
+  bool _removingBg = false; // estado quitar fondo
 
-  final _tipos = ['camiseta', 'pantalón', 'vestido', 'chaqueta', 'zapatos', 'accesorio', 'falda', 'jersey'];
-  final _colores = ['negro', 'blanco', 'rojo', 'azul', 'verde', 'amarillo', 'rosa', 'gris', 'beige', 'naranja', 'morado'];
-  final _estilos = ['casual', 'formal', 'deportivo', 'elegante', 'bohemio', 'urbano'];
+  final _tipos = ['camiseta', 'pantalón', 'vestido', 'chaqueta', 'zapatos',
+    'accesorio', 'falda', 'jersey', 'top', 'bolso', 'collar'];
+  final _colores = ['negro', 'blanco', 'rojo', 'azul', 'verde', 'amarillo',
+    'rosa', 'gris', 'beige', 'naranja', 'morado', 'marrón', 'turquesa'];
+  final _estilos = ['casual', 'formal', 'deportivo', 'elegante', 'bohemio',
+    'urbano', 'vintage', 'minimalista'];
   final _temporadas = ['verano', 'primavera', 'otoño', 'invierno', 'todo año'];
 
   bool get _editMode => widget.prenda != null;
@@ -46,9 +50,16 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _nombreCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final file = await picker.pickImage(
+        source: ImageSource.gallery, imageQuality: 80);
     if (file == null) return;
 
     setState(() => _uploadingImg = true);
@@ -56,6 +67,9 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
       final bytes = await file.readAsBytes();
       final url = await ApiService.subirImagen(bytes, file.name);
       if (mounted) setState(() => _fotoUrl = url);
+
+      // Quitar fondo automáticamente al subir
+      await _quitarFondo(url);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,6 +78,24 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
       }
     } finally {
       if (mounted) setState(() => _uploadingImg = false);
+    }
+  }
+
+  // Quita el fondo y actualiza _fotoUrl con la imagen procesada
+  Future<void> _quitarFondo(String url) async {
+    setState(() => _removingBg = true);
+    try {
+      // Sube imagen sin fondo como nueva imagen al servidor
+      final base64Result = await ApiService.removeBg(url);
+      // Convierte base64 a bytes y sube al servidor para tener URL persistente
+      final bytes = base64Decode(base64Result);
+      final newUrl = await ApiService.subirImagen(
+          bytes, 'nobg_${DateTime.now().millisecondsSinceEpoch}.png');
+      if (mounted) setState(() => _fotoUrl = newUrl);
+    } catch (_) {
+      // Si falla quitar fondo, mantenemos la imagen original — no bloqueamos
+    } finally {
+      if (mounted) setState(() => _removingBg = false);
     }
   }
 
@@ -91,7 +123,8 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')),
+            SnackBar(
+                content: Text(e.toString().replaceAll('Exception: ', '')),
                 backgroundColor: AppTheme.error));
       }
     } finally {
@@ -117,9 +150,9 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
             children: [
               // Imagen
               GestureDetector(
-                onTap: _pickImage,
+                onTap: _uploadingImg || _removingBg ? null : _pickImage,
                 child: Container(
-                  height: 200,
+                  height: 220,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: AppTheme.cardBg,
@@ -127,12 +160,19 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
                     border: Border.all(color: AppTheme.border),
                   ),
                   child: _uploadingImg
-                      ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+                      ? _loadingState('Subiendo imagen...')
+                      : _removingBg
+                      ? _loadingState('Quitando fondo...')
                       : _fotoUrl != null && _fotoUrl!.isNotEmpty
                       ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(_fotoUrl!, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _imgHint()))
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      _fotoUrl!,
+                      fit: BoxFit.contain,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, __, ___) => _imgHint(),
+                    ),
+                  )
                       : _imgHint(),
                 ),
               ),
@@ -144,47 +184,64 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
                 controller: _nombreCtrl,
                 style: GoogleFonts.dmSans(fontSize: 14),
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
-                decoration: const InputDecoration(hintText: 'ej. Camiseta azul marinera'),
+                decoration:
+                const InputDecoration(hintText: 'ej. Camiseta azul marinera'),
               ),
               const SizedBox(height: 16),
 
               Row(children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _label('TIPO'),
-                  const SizedBox(height: 6),
-                  _buildDropdown(_tipos, _tipo, (v) => setState(() => _tipo = v!)),
-                ])),
+                Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('TIPO'),
+                      const SizedBox(height: 6),
+                      _buildDropdown(_tipos, _tipo,
+                              (v) => setState(() => _tipo = v!)),
+                    ])),
                 const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _label('COLOR'),
-                  const SizedBox(height: 6),
-                  _buildDropdown(_colores, _color, (v) => setState(() => _color = v!)),
-                ])),
+                Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('COLOR'),
+                      const SizedBox(height: 6),
+                      _buildDropdown(_colores, _color,
+                              (v) => setState(() => _color = v!)),
+                    ])),
               ]),
               const SizedBox(height: 16),
 
               Row(children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _label('ESTILO'),
-                  const SizedBox(height: 6),
-                  _buildDropdown(_estilos, _estilo, (v) => setState(() => _estilo = v!)),
-                ])),
+                Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('ESTILO'),
+                      const SizedBox(height: 6),
+                      _buildDropdown(_estilos, _estilo,
+                              (v) => setState(() => _estilo = v!)),
+                    ])),
                 const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _label('TEMPORADA'),
-                  const SizedBox(height: 6),
-                  _buildDropdown(_temporadas, _temporada, (v) => setState(() => _temporada = v!)),
-                ])),
+                Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('TEMPORADA'),
+                      const SizedBox(height: 6),
+                      _buildDropdown(_temporadas, _temporada,
+                              (v) => setState(() => _temporada = v!)),
+                    ])),
               ]),
               const SizedBox(height: 32),
 
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _loading ? null : _submit,
+                  onPressed: _loading || _uploadingImg || _removingBg
+                      ? null
+                      : _submit,
                   child: _loading
-                      ? const SizedBox(height: 18, width: 18,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      ? const SizedBox(
+                      height: 18, width: 18,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
                       : Text(_editMode ? 'GUARDAR CAMBIOS' : 'AÑADIR PRENDA'),
                 ),
               ),
@@ -195,12 +252,25 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
     );
   }
 
+  Widget _loadingState(String msg) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CircularProgressIndicator(color: AppTheme.accent),
+        const SizedBox(height: 12),
+        Text(msg, style: GoogleFonts.dmSans(
+            fontSize: 13, color: AppTheme.textSecondary)),
+      ],
+    );
+  }
+
   Widget _label(String text) => Text(text,
       style: GoogleFonts.dmSans(
           fontSize: 11, fontWeight: FontWeight.w600,
           color: AppTheme.textSecondary, letterSpacing: 1));
 
-  Widget _buildDropdown(List<String> items, String value, ValueChanged<String?> onChanged) {
+  Widget _buildDropdown(List<String> items, String value,
+      ValueChanged<String?> onChanged) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -215,7 +285,9 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
           style: GoogleFonts.dmSans(fontSize: 13, color: AppTheme.textPrimary),
           dropdownColor: AppTheme.background,
           items: items.map((t) => DropdownMenuItem(
-              value: t, child: Text(t, style: GoogleFonts.dmSans(fontSize: 13)))).toList(),
+              value: t,
+              child: Text(t, style: GoogleFonts.dmSans(fontSize: 13))))
+              .toList(),
           onChanged: onChanged,
         ),
       ),
@@ -228,8 +300,10 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
       const Icon(Icons.add_photo_alternate_outlined,
           size: 40, color: AppTheme.textSecondary),
       const SizedBox(height: 8),
-      Text('Añadir foto', style: GoogleFonts.dmSans(
-          fontSize: 13, color: AppTheme.textSecondary)),
+      Text('Añadir foto (fondo se quitará automáticamente)',
+          style: GoogleFonts.dmSans(
+              fontSize: 12, color: AppTheme.textSecondary),
+          textAlign: TextAlign.center),
     ],
   );
 }

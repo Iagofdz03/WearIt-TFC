@@ -341,18 +341,24 @@ class ApiService {
   // ─── REMOVE BG ──────────────────────────────────────────────────────────────
   // Descarga la imagen localmente y la manda como base64 a remove.bg
   static Future<String> removeBg(String imageUrl) async {
-    const apiKey = 'TU_API_KEY_REMOVE_BG';
+    const apiKey = 'NCzAB9tYmaw2Z4KT4LozW9h6';
 
-    // 1. Descarga la imagen desde tu servidor local
+    // 1. Descarga la imagen desde tu servidor
+    print('[removeBg] Descargando imagen: $imageUrl');
     final imageRes = await http.get(Uri.parse(imageUrl));
+    print('[removeBg] Status descarga: ${imageRes.statusCode}');
+    print('[removeBg] Bytes descargados: ${imageRes.bodyBytes.length}');
+
     if (imageRes.statusCode != 200) {
-      throw Exception('No se pudo descargar la imagen');
+      throw Exception('No se pudo descargar la imagen: ${imageRes.statusCode}');
     }
 
     // 2. Convierte a base64
     final imageBase64 = base64Encode(imageRes.bodyBytes);
+    print('[removeBg] Base64 length: ${imageBase64.length}');
 
-    // 3. Manda como base64 a remove.bg (no como URL)
+    // 3. Llama a remove.bg
+    print('[removeBg] Llamando a remove.bg...');
     final res = await http.post(
       Uri.parse('https://api.remove.bg/v1.0/removebg'),
       headers: {
@@ -360,15 +366,18 @@ class ApiService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'image_base64': imageBase64,
+        'image_file_b64': imageBase64,
         'size': 'auto',
         'format': 'png',
       }),
     );
 
+    print('[removeBg] Status remove.bg: ${res.statusCode}');
+    print('[removeBg] Respuesta: ${res.body}');
+
     if (res.statusCode == 200) {
       return base64Encode(res.bodyBytes);
     }
-    throw Exception('Error remove.bg: ${res.statusCode}');
+    throw Exception('Error remove.bg ${res.statusCode}: ${res.body}');
   }
 }
