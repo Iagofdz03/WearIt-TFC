@@ -3,14 +3,7 @@ package com.wearit.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.wearit.model.Prenda;
 import com.wearit.service.PrendaService;
@@ -30,6 +23,18 @@ public class PrendaController {
     @GetMapping("/usuario/{usuarioId}")
     public List<Prenda> listarPorUsuario(@PathVariable Long usuarioId) {
         return prendaService.listarPorUsuario(usuarioId);
+    }
+
+    // Endpoint de filtrado que Flutter usa con query params
+    @GetMapping("/usuario/{usuarioId}/filtrar")
+    public List<Prenda> filtrar(
+            @PathVariable Long usuarioId,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String color,
+            @RequestParam(required = false) String estilo,
+            @RequestParam(required = false) String temporada,
+            @RequestParam(required = false) String nombre) {
+        return prendaService.filtrar(usuarioId, tipo, color, estilo, temporada, nombre);
     }
 
     @GetMapping("/{id}")

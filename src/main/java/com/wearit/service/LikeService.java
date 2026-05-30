@@ -19,8 +19,13 @@ public class LikeService {
         return likeRepository.findByOutfitId(outfitId);
     }
 
+    // Usa countByOutfitId — más eficiente que .size()
     public int contarPorOutfit(Long outfitId) {
-        return likeRepository.findByOutfitId(outfitId).size();
+        return (int) likeRepository.countByOutfitId(outfitId);
+    }
+
+    public boolean existeLike(Long usuarioId, Long outfitId) {
+        return likeRepository.existsByUsuarioIdAndOutfitId(usuarioId, outfitId);
     }
 
     public Like darLike(Like like) {
@@ -28,13 +33,18 @@ public class LikeService {
             like.getUsuario().getId(), like.getOutfit().getId()
         );
         if (yaExiste) {
-			throw new RuntimeException("Ya has dado like a este outfit");
-		}
+            throw new RuntimeException("Ya has dado like a este outfit");
+        }
         return likeRepository.save(like);
     }
 
     @Transactional
     public void quitarLike(Long usuarioId, Long outfitId) {
         likeRepository.deleteByUsuarioIdAndOutfitId(usuarioId, outfitId);
+    }
+
+    // Devuelve IDs ordenados por likes en una sola query
+    public List<Object[]> getRankingIds() {
+        return likeRepository.findOutfitIdsByLikesDesc();
     }
 }

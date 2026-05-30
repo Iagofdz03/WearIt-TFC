@@ -22,6 +22,7 @@ public class OutfitService {
         return outfitRepository.findByUsuarioId(usuarioId);
     }
 
+    // Necesario para OutfitController /publicos y /ranking
     public List<Outfit> listarPublicos() {
         return outfitRepository.findByEsPublicoTrue();
     }

@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "usuario")
-@Data  // Genera getters, setters, toString, equals, hashCode
-@NoArgsConstructor  // Genera constructor vacío
+@Data
+@NoArgsConstructor
 public class Usuario {
 
     @Id
@@ -28,15 +28,15 @@ public class Usuario {
     @Column(nullable = false)
     private String nombre;
 
-    @Column(nullable = false)
-    private String contraseña;
+    // Campo y columna BD ambos se llaman 'password'
+    @Column(nullable = false, name = "password")
+    private String password;
 
     private String fotoPerfil;
 
     @Column(name = "fecha_registro")
     private LocalDateTime fechaRegistro;
 
-    // Se ejecuta antes de guardar por primera vez
     @PrePersist
     protected void onCreate() {
         fechaRegistro = LocalDateTime.now();

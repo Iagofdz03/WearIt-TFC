@@ -19,9 +19,10 @@ public class AuthController {
 
     @PostMapping("/login")
     public Map<String, String> login(@RequestBody Map<String, String> body) {
+        // Flutter manda "email" y "password" — ahora coincide
         String token = authService.login(
             body.get("email"),
-            body.get("contraseña")
+            body.get("password")
         );
         return Map.of("token", token);
     }

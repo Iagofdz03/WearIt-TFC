@@ -1,15 +1,10 @@
 package com.wearit.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.wearit.model.Like;
 import com.wearit.service.LikeService;
@@ -29,6 +24,16 @@ public class LikeController {
     @GetMapping("/outfit/{outfitId}/count")
     public int contarLikes(@PathVariable Long outfitId) {
         return likeService.contarPorOutfit(outfitId);
+    }
+
+    // Flutter llama a este endpoint para saber si el usuario ya dio like
+    @GetMapping("/outfit/{outfitId}/estado/{usuarioId}")
+    public Map<String, Object> estadoLike(
+            @PathVariable Long outfitId,
+            @PathVariable Long usuarioId) {
+        boolean yaDiLike = likeService.existeLike(usuarioId, outfitId);
+        int count = likeService.contarPorOutfit(outfitId);
+        return Map.of("yaDiLike", yaDiLike, "count", count);
     }
 
     @PostMapping

@@ -1,6 +1,7 @@
 package com.wearit.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.wearit.config.JwtUtil;
@@ -16,11 +17,14 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
-    public String login(String email, String contraseña) {
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public String login(String email, String password) {
         Usuario usuario = usuarioRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        if (!usuario.getContraseña().equals(contraseña)) {
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
             throw new RuntimeException("Contraseña incorrecta");
         }
 

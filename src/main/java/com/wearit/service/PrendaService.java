@@ -22,6 +22,11 @@ public class PrendaService {
         return prendaRepository.findByUsuarioId(usuarioId);
     }
 
+    public List<Prenda> filtrar(Long usuarioId, String tipo, String color,
+                                 String estilo, String temporada, String nombre) {
+        return prendaRepository.filtrar(usuarioId, tipo, color, estilo, temporada, nombre);
+    }
+
     public Prenda buscarPorId(Long id) {
         return prendaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Prenda no encontrada"));
