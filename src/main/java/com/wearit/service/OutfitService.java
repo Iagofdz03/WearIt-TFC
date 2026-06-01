@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wearit.model.Outfit;
+import com.wearit.repository.HistorialOutfitRepository;
+import com.wearit.repository.LikeRepository;
 import com.wearit.repository.OutfitRepository;
 
 @Service
@@ -13,6 +15,12 @@ public class OutfitService {
 
     @Autowired
     private OutfitRepository outfitRepository;
+    
+    @Autowired
+    private LikeRepository likeRepository;
+
+    @Autowired
+    private HistorialOutfitRepository historialRepository;
 
     public List<Outfit> listarTodos() {
         return outfitRepository.findAll();
@@ -46,6 +54,8 @@ public class OutfitService {
     }
 
     public void eliminar(Long id) {
+        likeRepository.deleteByOutfitId(id);
+        historialRepository.deleteByOutfitId(id);
         outfitRepository.deleteById(id);
     }
 }

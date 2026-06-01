@@ -48,6 +48,10 @@ public class PrendaService {
     }
 
     public void eliminar(Long id) {
-        prendaRepository.deleteById(id);
+        try {
+            prendaRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new RuntimeException("Esta prenda pertenece a un outfit. Elimina primero el outfit.");
+        }
     }
 }

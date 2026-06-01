@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/imagenes/**").permitAll()
                 .requestMatchers("/api/tiempo/**").permitAll()
                 .requestMatchers("/api/outfits/publicos").permitAll()
+                .requestMatchers("/api/favoritos/**").permitAll()
                 // Todo lo demás requiere token
                 .anyRequest().authenticated()
             )

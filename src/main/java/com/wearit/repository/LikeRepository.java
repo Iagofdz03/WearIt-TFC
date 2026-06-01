@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 
 import com.wearit.model.Like;
 
+import jakarta.transaction.Transactional;
+
 public interface LikeRepository extends JpaRepository<Like, Long> {
 
     List<Like> findByOutfitId(Long outfitId);
@@ -25,4 +27,7 @@ public interface LikeRepository extends JpaRepository<Like, Long> {
            "GROUP BY l.outfit.id " +
            "ORDER BY total DESC")
     List<Object[]> findOutfitIdsByLikesDesc();
+    
+    @Transactional
+    void deleteByOutfitId(Long outfitId);
 }
