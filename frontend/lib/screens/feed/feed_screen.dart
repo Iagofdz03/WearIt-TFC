@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../api/api_service.dart';
 import '../../widgets/outfit_card.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/forecast_widget.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -17,8 +18,8 @@ class _FeedScreenState extends State<FeedScreen> {
   List<dynamic> _outfits = [];
   Map<String, dynamic>? _tiempo;
   bool _loading = true;
-  String _ciudad = 'Barcelona';
-  final _ciudadCtrl = TextEditingController(text: 'Barcelona');
+  String _ciudad = 'Vigo';
+  final _ciudadCtrl = TextEditingController(text: 'Vigo');
   String _filtroOcasion = '';
   int? _userId;
 
@@ -233,6 +234,8 @@ class _FeedScreenState extends State<FeedScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            ForecastWidget(ciudad: _ciudad),
           ] else
             const Padding(
               padding: EdgeInsets.only(top: 12),

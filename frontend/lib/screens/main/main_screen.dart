@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/material.dart';
 import '../feed/feed_screen.dart';
 import '../prendas/prendas_screen.dart';
 import '../outfits/outfits_screen.dart';
-import '../sugerencias/sugerencias_screen.dart';
+import '../social/feed_social_screen.dart';
 import '../perfil/perfil_screen.dart';
 import '../../theme/app_theme.dart';
 
@@ -22,16 +21,21 @@ class _MainScreenState extends State<MainScreen> {
     const FeedScreen(),
     const PrendasScreen(),
     const OutfitsScreen(),
-    const SugerenciasScreen(),
+    const FeedSocialScreen(),
     const PerfilScreen(),
   ];
 
   final List<_NavItem> _navItems = [
-    _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Inicio'),
-    _NavItem(icon: Icons.checkroom_outlined, activeIcon: Icons.checkroom, label: 'Armario'),
-    _NavItem(icon: Icons.style_outlined, activeIcon: Icons.style, label: 'Outfits'),
-    _NavItem(icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome, label: 'Ideas'),
-    _NavItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Perfil'),
+    _NavItem(icon: Icons.home_outlined,
+        activeIcon: Icons.home, label: 'Inicio'),
+    _NavItem(icon: Icons.checkroom_outlined,
+        activeIcon: Icons.checkroom, label: 'Armario'),
+    _NavItem(icon: Icons.style_outlined,
+        activeIcon: Icons.style, label: 'Outfits'),
+    _NavItem(icon: Icons.people_outline,
+        activeIcon: Icons.people, label: 'Comunidad'),
+    _NavItem(icon: Icons.person_outline,
+        activeIcon: Icons.person, label: 'Perfil'),
   ];
 
   @override
@@ -76,14 +80,12 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                         if (selected) ...[
                           const SizedBox(width: 6),
-                          Text(
-                            item.label,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.background,
-                            ),
-                          ),
+                          Text(item.label,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.background,
+                              )),
                         ],
                       ],
                     ),

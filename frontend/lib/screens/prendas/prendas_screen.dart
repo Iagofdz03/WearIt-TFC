@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../api/api_service.dart';
 import 'prenda_form_screen.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/favorito_button.dart';
 
 class PrendasScreen extends StatefulWidget {
   const PrendasScreen({super.key});
@@ -17,8 +18,8 @@ class _PrendasScreenState extends State<PrendasScreen> {
   bool _loading = true;
   int? _userId;
   final _busquedaCtrl = TextEditingController();
+  bool _soloFavoritos = false;
 
-  // Filtros múltiples — sets en vez de string único
   final Set<String> _filtrosTipo = {};
   final Set<String> _filtrosColor = {};
   final Set<String> _filtrosEstilo = {};
@@ -54,12 +55,20 @@ class _PrendasScreenState extends State<PrendasScreen> {
     if (_userId == null) return;
     setState(() => _loading = true);
     try {
-      // Filtramos localmente para soportar múltiples valores
-      final data = await ApiService.getPrendas(_userId!,
-          nombre: _busquedaCtrl.text.isEmpty ? null : _busquedaCtrl.text);
+      List<dynamic> data;
+
+      if (_soloFavoritos) {
+        final favs = await ApiService.getPrendasFavoritas(_userId!);
+        data = favs
+            .map((f) => f['prenda'])
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      } else {
+        data = await ApiService.getPrendas(_userId!,
+            nombre: _busquedaCtrl.text.isEmpty ? null : _busquedaCtrl.text);
+      }
 
       List<dynamic> filtradas = data;
-
       if (_filtrosTipo.isNotEmpty) {
         filtradas = filtradas.where((p) =>
             _filtrosTipo.contains((p['tipo'] ?? '').toLowerCase())).toList();
@@ -70,7 +79,8 @@ class _PrendasScreenState extends State<PrendasScreen> {
       }
       if (_filtrosEstilo.isNotEmpty) {
         filtradas = filtradas.where((p) =>
-            _filtrosEstilo.contains((p['estilo'] ?? '').toLowerCase())).toList();
+            _filtrosEstilo.contains(
+                (p['estilo'] ?? '').toLowerCase())).toList();
       }
       if (_filtrosTemporada.isNotEmpty) {
         filtradas = filtradas.where((p) =>
@@ -123,20 +133,30 @@ class _PrendasScreenState extends State<PrendasScreen> {
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: Text('Cancelar',
-                  style: GoogleFonts.dmSans(
-                      color: AppTheme.textSecondary))),
+                  style: GoogleFonts.dmSans(color: AppTheme.textSecondary))),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.error),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
             child: const Text('Eliminar'),
           ),
         ],
       ),
     );
     if (confirm == true) {
-      await ApiService.eliminarPrenda(id);
-      await _loadPrendas();
+      try {
+        await ApiService.eliminarPrenda(id);
+        await _loadPrendas();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString().replaceAll('Exception: ', '')),
+              backgroundColor: AppTheme.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -146,7 +166,18 @@ class _PrendasScreenState extends State<PrendasScreen> {
       appBar: AppBar(
         title: const Text('Mi Armario'),
         actions: [
-          // Botón filtros con badge del número activos
+          // Botón favoritos
+          IconButton(
+            icon: Icon(
+              _soloFavoritos ? Icons.star : Icons.star_border,
+              color: _soloFavoritos ? Colors.amber : AppTheme.textPrimary,
+            ),
+            onPressed: () {
+              setState(() => _soloFavoritos = !_soloFavoritos);
+              _loadPrendas();
+            },
+          ),
+          // Botón filtros con badge
           Stack(
             children: [
               IconButton(
@@ -173,13 +204,13 @@ class _PrendasScreenState extends State<PrendasScreen> {
                 ),
             ],
           ),
+          // Botón añadir
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () async {
               await Navigator.push(context,
                   MaterialPageRoute(
-                      builder: (_) =>
-                          PrendaFormScreen(userId: _userId!)));
+                      builder: (_) => PrendaFormScreen(userId: _userId!)));
               await _loadPrendas();
             },
           ),
@@ -251,7 +282,10 @@ class _PrendasScreenState extends State<PrendasScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(children: [
-              Text('${_prendas.length} prendas',
+              Text(
+                  _soloFavoritos
+                      ? '${_prendas.length} favoritas'
+                      : '${_prendas.length} prendas',
                   style: GoogleFonts.dmSans(
                       fontSize: 12, color: AppTheme.textSecondary)),
             ]),
@@ -260,8 +294,8 @@ class _PrendasScreenState extends State<PrendasScreen> {
           // Grid prendas
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(
-                color: AppTheme.accent))
+                ? const Center(
+                child: CircularProgressIndicator(color: AppTheme.accent))
                 : _prendas.isEmpty
                 ? _buildEmpty()
                 : RefreshIndicator(
@@ -277,8 +311,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
                   childAspectRatio: 0.72,
                 ),
                 itemCount: _prendas.length,
-                itemBuilder: (ctx, i) =>
-                    _buildPrendaCard(_prendas[i]),
+                itemBuilder: (ctx, i) => _buildPrendaCard(_prendas[i]),
               ),
             ),
           ),
@@ -314,8 +347,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
                   color: sel ? AppTheme.primary : AppTheme.background,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: sel ? AppTheme.primary : AppTheme.border,
-                  ),
+                      color: sel ? AppTheme.primary : AppTheme.border),
                 ),
                 child: Text(op,
                     style: GoogleFonts.dmSans(
@@ -388,6 +420,14 @@ class _PrendasScreenState extends State<PrendasScreen> {
                   Row(children: [
                     _chip(prenda['temporada'] ?? ''),
                     const Spacer(),
+                    if (_userId != null)
+                      FavoritoButton(
+                        usuarioId: _userId!,
+                        itemId: prenda['id'],
+                        esPrenda: true,
+                        size: 16,
+                      ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => _eliminarPrenda(prenda['id']),
                       child: const Icon(Icons.delete_outline,
@@ -461,26 +501,38 @@ class _PrendasScreenState extends State<PrendasScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.checkroom_outlined, size: 64,
+          Icon(
+              _soloFavoritos
+                  ? Icons.star_border
+                  : Icons.checkroom_outlined,
+              size: 64,
               color: AppTheme.textSecondary.withOpacity(0.3)),
           const SizedBox(height: 16),
-          Text('Tu armario está vacío',
+          Text(
+              _soloFavoritos
+                  ? 'No tienes prendas favoritas'
+                  : 'Tu armario está vacío',
               style: GoogleFonts.cormorant(
                   fontSize: 22, color: AppTheme.textSecondary)),
           const SizedBox(height: 8),
-          Text('Añade tu primera prenda',
+          Text(
+              _soloFavoritos
+                  ? 'Marca prendas con ★ para verlas aquí'
+                  : 'Añade tu primera prenda',
               style: GoogleFonts.dmSans(
                   fontSize: 13, color: AppTheme.textSecondary)),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () async {
-              await Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => PrendaFormScreen(userId: _userId!)));
-              await _loadPrendas();
-            },
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('AÑADIR PRENDA'),
-          ),
+          if (!_soloFavoritos) ...[
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => PrendaFormScreen(userId: _userId!)));
+                await _loadPrendas();
+              },
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('AÑADIR PRENDA'),
+            ),
+          ],
         ],
       ),
     );

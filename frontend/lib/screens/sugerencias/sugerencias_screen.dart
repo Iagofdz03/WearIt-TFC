@@ -234,14 +234,18 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.checkroom_outlined, size: 18, color: AppTheme.textSecondary),
-                        const SizedBox(height: 4),
+                        const Icon(Icons.checkroom_outlined, size: 16, color: AppTheme.textSecondary),
+                        const SizedBox(height: 2),
                         Text(p['nombre'] ?? '',
                             style: GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w600),
-                            maxLines: 1),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
                         Text(p['color'] ?? '',
-                            style: GoogleFonts.dmSans(fontSize: 9, color: AppTheme.textSecondary)),
+                            style: GoogleFonts.dmSans(fontSize: 9, color: AppTheme.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   );

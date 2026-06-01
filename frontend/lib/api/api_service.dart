@@ -150,7 +150,14 @@ class ApiService {
       Uri.parse('$baseUrl/prendas/$id'),
       headers: await _headers(),
     );
-    if (res.statusCode != 200) throw Exception('Error al eliminar prenda');
+    if (res.statusCode != 200) {
+      try {
+        final body = jsonDecode(res.body);
+        throw Exception(body['message'] ?? body['error'] ?? 'Error al eliminar prenda');
+      } catch (_) {
+        throw Exception('Esta prenda pertenece a un outfit. Elimínalo primero.');
+      }
+    }
   }
 
   // ─── OUTFITS ────────────────────────────────────────────────────────────────
@@ -212,6 +219,7 @@ class ApiService {
       Uri.parse('$baseUrl/outfits/$id'),
       headers: await _headers(),
     );
+    print('>>> Eliminar outfit status: ${res.statusCode} body: ${res.body}');
     if (res.statusCode != 200) throw Exception('Error al eliminar outfit');
   }
 
@@ -380,4 +388,66 @@ class ApiService {
     }
     throw Exception('Error remove.bg ${res.statusCode}: ${res.body}');
   }
+
+  static Future<List<dynamic>> getForecast(String ciudad) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/tiempo/$ciudad/forecast'),
+      headers: await _headers(),
+    );
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Error al obtener forecast');
+  }
+
+  // ─── FAVORITOS ──────────────────────────────────────────────────────────────
+
+  static Future<bool> esPrendaFavorita(int usuarioId, int prendaId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/favoritos/prenda/$usuarioId/$prendaId'),
+      headers: await _headers(),
+    );
+    if (res.statusCode == 200) return jsonDecode(res.body)['favorito'];
+    return false;
+  }
+
+  static Future<bool> esOutfitFavorito(int usuarioId, int outfitId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/favoritos/outfit/$usuarioId/$outfitId'),
+      headers: await _headers(),
+    );
+    if (res.statusCode == 200) return jsonDecode(res.body)['favorito'];
+    return false;
+  }
+
+  static Future<void> togglePrendaFavorita(int usuarioId, int prendaId) async {
+    await http.post(
+      Uri.parse('$baseUrl/favoritos/prenda/$usuarioId/$prendaId'),
+      headers: await _headers(),
+    );
+  }
+
+  static Future<void> toggleOutfitFavorito(int usuarioId, int outfitId) async {
+    await http.post(
+      Uri.parse('$baseUrl/favoritos/outfit/$usuarioId/$outfitId'),
+      headers: await _headers(),
+    );
+  }
+
+  static Future<List<dynamic>> getPrendasFavoritas(int usuarioId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/favoritos/prendas/$usuarioId'),
+      headers: await _headers(),
+    );
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    return [];
+  }
+
+  static Future<List<dynamic>> getOutfitsFavoritos(int usuarioId) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/favoritos/outfits/$usuarioId'),
+      headers: await _headers(),
+    );
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    return [];
+  }
+
 }
