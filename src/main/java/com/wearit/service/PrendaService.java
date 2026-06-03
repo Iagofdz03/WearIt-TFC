@@ -23,8 +23,8 @@ public class PrendaService {
     }
 
     public List<Prenda> filtrar(Long usuarioId, String tipo, String color,
-                                 String estilo, String temporada, String nombre) {
-        return prendaRepository.filtrar(usuarioId, tipo, color, estilo, temporada, nombre);
+                                 String estilo, String temporada,String estampado, String nombre) {
+        return prendaRepository.filtrar(usuarioId, tipo, color, estilo, temporada, estampado, nombre);
     }
 
     public Prenda buscarPorId(Long id) {
@@ -43,7 +43,9 @@ public class PrendaService {
         prenda.setColor(datos.getColor());
         prenda.setEstilo(datos.getEstilo());
         prenda.setTemporada(datos.getTemporada());
+        prenda.setEstampado(datos.getEstampado());
         prenda.setFotoUrl(datos.getFotoUrl());
+        prenda.setFotoPortada(datos.getFotoPortada());
         return prendaRepository.save(prenda);
     }
 

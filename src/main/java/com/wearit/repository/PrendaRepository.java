@@ -1,32 +1,35 @@
 package com.wearit.repository;
 
 import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import com.wearit.model.Prenda;
 
 public interface PrendaRepository extends JpaRepository<Prenda, Long> {
 
     List<Prenda> findByUsuarioId(Long usuarioId);
 
-
-    // Filtro dinámico: ignora parámetros nulos automáticamente
+    // Filtro dinámico con soporte para múltiples valores separados por coma
+    // Ejemplo: color="negro,blanco" busca prendas que contengan negro O blanco
     @Query("SELECT p FROM Prenda p WHERE p.usuario.id = :usuarioId " +
            "AND (:tipo IS NULL OR p.tipo = :tipo) " +
-           "AND (:color IS NULL OR p.color = :color) " +
-           "AND (:estilo IS NULL OR p.estilo = :estilo) " +
-           "AND (:temporada IS NULL OR p.temporada = :temporada) " +
-           "AND (:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))")
+           "AND (:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
+           "AND (:color IS NULL OR " +
+           "     p.color LIKE CONCAT('%', :color, '%')) " +
+           "AND (:estilo IS NULL OR " +
+           "     p.estilo LIKE CONCAT('%', :estilo, '%')) " +
+           "AND (:temporada IS NULL OR " +
+           "     p.temporada LIKE CONCAT('%', :temporada, '%')) " +
+           "AND (:estampado IS NULL OR " +
+           "     p.estampado LIKE CONCAT('%', :estampado, '%'))")
     List<Prenda> filtrar(
         @Param("usuarioId") Long usuarioId,
         @Param("tipo") String tipo,
         @Param("color") String color,
         @Param("estilo") String estilo,
         @Param("temporada") String temporada,
+        @Param("estampado") String estampado,
         @Param("nombre") String nombre
     );
 }
-

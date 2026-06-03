@@ -39,6 +39,9 @@ public class Outfit {
     private String nombre;
     private String ocasion;    // trabajo, fiesta, casual
     private Boolean esPublico = false;
+    
+    @Column(name = "foto_portada")
+    private String fotoPortada;
 
     @Column(name = "fecha_creacion")
     private java.time.LocalDateTime fechaCreacion;

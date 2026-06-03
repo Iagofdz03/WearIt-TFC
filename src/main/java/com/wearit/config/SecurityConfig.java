@@ -42,12 +42,15 @@ public class SecurityConfig {
                 .requestMatchers("/api/imagenes/**").permitAll()
                 .requestMatchers("/api/tiempo/**").permitAll()
                 .requestMatchers("/api/outfits/publicos").permitAll()
+                .requestMatchers("/api/outfits/*/posiciones").permitAll()
                 .requestMatchers("/api/favoritos/**").permitAll()
-                // Todo lo demás requiere token
+                .requestMatchers(
+                    org.springframework.http.HttpMethod.GET,
+                    "/api/outfits/*/posiciones").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
+ 
         return http.build();
     }
 

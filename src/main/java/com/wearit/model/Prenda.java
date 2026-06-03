@@ -34,7 +34,11 @@ public class Prenda {
     private String color;
     private String estilo;
     private String temporada;
+    private String estampado;
     private String fotoUrl;
+    
+    @Column(name = "foto_portada")
+    private String fotoPortada;
 
     @Column(name = "fecha_anadida")
     private java.time.LocalDateTime fechaAnadida;
