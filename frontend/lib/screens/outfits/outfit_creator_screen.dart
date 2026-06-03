@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../api/api_service.dart';
 import '../../theme/app_theme.dart';
-import 'dart:convert';
+
 
 // ─── Posiciones por defecto ───────────────────────────────────────────────────
 const Map<String, Offset> _defaultPositions = {
@@ -54,8 +55,6 @@ const _presets = [
 class _PlacedItem {
   final Map<String, dynamic> prenda;
   Offset position;
-  // ValueNotifier para posición — evita setState en cada frame de arrastre
-  late ValueNotifier<Offset> positionNotifier;
   double scale;
   double brightness;
   double contrast;
@@ -74,13 +73,7 @@ class _PlacedItem {
     this.removeBgApplied = false,
     this.processedUrl,
     this.removingBg = false,
-  }) {
-    positionNotifier = ValueNotifier<Offset>(position);
-  }
-
-  void dispose() {
-    positionNotifier.dispose();
-  }
+  });
 
   String get tipo => (prenda['tipo'] ?? 'accesorio').toString().toLowerCase();
   String get imageUrl => processedUrl ?? prenda['fotoUrl'] ?? '';
@@ -106,7 +99,15 @@ class _PlacedItem {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 class OutfitCreatorScreen extends StatefulWidget {
   final int userId;
-  const OutfitCreatorScreen({super.key, required this.userId});
+  final int? outfitId;                    // null = crear, int = editar
+  final Map<String, dynamic>? outfitExistente; // datos del outfit a editar
+
+  const OutfitCreatorScreen({
+    super.key,
+    required this.userId,
+    this.outfitId,
+    this.outfitExistente,
+  });
 
   @override
   State<OutfitCreatorScreen> createState() => _OutfitCreatorScreenState();
@@ -124,11 +125,13 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
   bool _saving = false;
 
   final Map<String, List<String>> _categorias = {
-    'Tops': ['camiseta', 'top', 'jersey', 'chaqueta'],
+    'Tops':       ['camiseta', 'top', 'jersey', 'chaqueta'],
     'Pantalones': ['pantalón', 'falda', 'vestido'],
-    'Zapatos': ['zapatos'],
-    'Extras': ['collar', 'bolso', 'accesorio'],
+    'Zapatos':    ['zapatos'],
+    'Extras':     ['collar', 'bolso', 'accesorio'],
   };
+
+  bool get _editMode => widget.outfitId != null;
 
   @override
   void initState() {
@@ -139,29 +142,97 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
   @override
   void dispose() {
     _nombreCtrl.dispose();
-    // Libera todos los ValueNotifier de las prendas colocadas
-    for (final item in _placed) {
-      item.dispose();
-    }
     super.dispose();
   }
 
   Future<void> _loadArmario() async {
     try {
       final data = await ApiService.getPrendas(widget.userId);
-      if (mounted) setState(() {
-        _armario = data;
-        _loadingArmario = false;
-      });
+      if (mounted) {
+        setState(() {
+          _armario = data;
+          _loadingArmario = false;
+        });
+        // Cargar outfit existente después de tener el armario
+        if (_editMode) await _cargarOutfitExistente();
+      }
     } catch (_) {
       if (mounted) setState(() => _loadingArmario = false);
     }
   }
 
+  // Carga las posiciones guardadas del outfit a editar
+  Future<void> _cargarOutfitExistente() async {
+    if (widget.outfitId == null) return;
+
+    // Cargar nombre, ocasión y visibilidad
+    _nombreCtrl.text = widget.outfitExistente?['nombre'] ?? '';
+    setState(() {
+      _ocasion = widget.outfitExistente?['ocasion'] ?? 'casual';
+      _esPublico = widget.outfitExistente?['esPublico'] ?? false;
+    });
+
+    try {
+      final posiciones = await ApiService.getPosiciones(widget.outfitId!);
+      if (mounted) {
+        setState(() {
+          _placed.clear();
+          for (final pos in posiciones) {
+            // Buscar prenda en el armario por ID
+            final prendaData = _armario.firstWhere(
+                  (p) => p['id'] == pos['prendaId'],
+              orElse: () => <String, dynamic>{
+                'id': pos['prendaId'],
+                'nombre': pos['nombre'] ?? '',
+                'tipo': pos['tipo'] ?? '',
+                'color': pos['color'] ?? '',
+                'fotoUrl': pos['fotoUrl'] ?? '',
+              },
+            );
+            _placed.add(_PlacedItem(
+              prenda: prendaData,
+              position: Offset(
+                (pos['x'] as num).toDouble(),
+                (pos['y'] as num).toDouble(),
+              ),
+              scale: (pos['scale'] as num).toDouble(),
+              removeBgApplied:
+              (pos['removeBgUrl'] as String? ?? '').isNotEmpty,
+              processedUrl:
+              (pos['removeBgUrl'] as String? ?? '').isNotEmpty
+                  ? pos['removeBgUrl']
+                  : null,
+            ));
+          }
+        });
+      }
+    } catch (_) {
+      // Si no hay posiciones guardadas, carga las prendas en posiciones por defecto
+      if (mounted && widget.outfitExistente != null) {
+        final prendas =
+            (widget.outfitExistente!['prendas'] as List?) ?? [];
+        setState(() {
+          for (final p in prendas) {
+            final tipo =
+            (p['tipo'] ?? 'accesorio').toString().toLowerCase();
+            _placed.add(_PlacedItem(
+              prenda: Map<String, dynamic>.from(p),
+              position:
+              _defaultPositions[tipo] ?? const Offset(100, 150),
+              scale: _defaultSizes[tipo] ?? 0.5,
+            ));
+          }
+        });
+      }
+    }
+  }
+
   List<dynamic> get _prendasCategoria {
     final tipos = _categorias[_categoriaSeleccionada] ?? [];
-    return _armario.where((p) =>
-        tipos.contains((p['tipo'] ?? '').toString().toLowerCase())).toList();
+    return _armario
+        .where((p) =>
+        tipos.contains((p['tipo'] ?? '').toString().toLowerCase()))
+        .toList();
   }
 
   bool _estaSeleccionada(Map<String, dynamic> prenda) =>
@@ -172,8 +243,8 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
       if (_estaSeleccionada(prenda)) {
         _placed.removeWhere((p) => p.prenda['id'] == prenda['id']);
       } else {
-        final tipo = (prenda['tipo'] ?? 'accesorio').toString().toLowerCase();
-        // Reemplaza prendas del mismo grupo (no accesorios)
+        final tipo =
+        (prenda['tipo'] ?? 'accesorio').toString().toLowerCase();
         if (!['collar', 'bolso', 'accesorio'].contains(tipo)) {
           final baseTypes = _categorias.entries
               .firstWhere((e) => e.value.contains(tipo),
@@ -183,7 +254,8 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
         }
         _placed.add(_PlacedItem(
           prenda: prenda,
-          position: _defaultPositions[tipo] ?? const Offset(100, 150),
+          position:
+          _defaultPositions[tipo] ?? const Offset(100, 150),
           scale: _defaultSizes[tipo] ?? 0.5,
         ));
       }
@@ -205,46 +277,89 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
       setState(() => item.removingBg = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al quitar fondo: $e'),
+            SnackBar(
+                content: Text('Error al quitar fondo: $e'),
                 backgroundColor: AppTheme.error));
       }
     }
   }
-
-  // ─── Guardar ───────────────────────────────────────────────────────────────
+    //Guardar
   Future<void> _guardarOutfit() async {
     if (_placed.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Añade al menos una prenda'),
-              backgroundColor: AppTheme.error));
+        const SnackBar(
+          content: Text('Añade al menos una prenda'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
       return;
     }
-    if (_nombreCtrl.text
-        .trim()
-        .isEmpty) {
+
+    if (_nombreCtrl.text.trim().isEmpty) {
       _showNombreDialog();
       return;
     }
+
     setState(() => _saving = true);
+
     try {
-      await ApiService.crearOutfit({
+      // 1. Crear o actualizar outfit
+      final outfitData = {
         'nombre': _nombreCtrl.text.trim(),
         'ocasion': _ocasion,
         'esPublico': _esPublico,
         'usuario': {'id': widget.userId},
         'prendas': _placed.map((p) => {'id': p.prenda['id']}).toList(),
-      });
+      };
+
+      print('>>> Creando outfit...');
+
+      final outfitGuardado = _editMode
+          ? await ApiService.actualizarOutfit(widget.outfitId!, outfitData)
+          : await ApiService.crearOutfit(outfitData);
+
+      final outfitId = outfitGuardado['id'] as int;
+
+      print('>>> Outfit creado con id: $outfitId');
+
+      // 2. Construir posiciones
+      final posiciones = _placed.asMap().entries.map((entry) {
+        final i = entry.key;
+        final item = entry.value;
+
+        return {
+          'prendaId': item.prenda['id'],
+          'x': item.position.dx,
+          'y': item.position.dy,
+          'scale': item.scale,
+          'zIndex': i,
+          'removeBgUrl': item.removeBgApplied ? (item.processedUrl ?? '') : '',
+        };
+      }).toList();
+
+      print('>>> Guardando ${posiciones.length} posiciones...');
+
+      // 3. Guardar posiciones UNA sola vez
+      await ApiService.guardarPosiciones(outfitId, posiciones);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Outfit guardado!'),
-                backgroundColor: AppTheme.success));
+          const SnackBar(
+            content: Text('¡Outfit guardado!'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
         Navigator.pop(context);
       }
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')),
-                backgroundColor: AppTheme.error));
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: AppTheme.error,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -256,83 +371,77 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
     String dialogOcasion = _ocasion;
     showDialog(
       context: context,
-      builder: (ctx) =>
-          StatefulBuilder(
-            builder: (ctx, setDialogState) =>
-                AlertDialog(
-                  backgroundColor: AppTheme.background,
-                  title: Text('Guardar outfit',
-                      style: GoogleFonts.cormorant(fontSize: 20)),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: _nombreCtrl,
-                        autofocus: true,
-                        style: GoogleFonts.dmSans(fontSize: 14),
-                        decoration: const InputDecoration(
-                            hintText: 'ej. Look del lunes'),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(children: [
-                        Text('Ocasión:',
-                            style: GoogleFonts.dmSans(fontSize: 13)),
-                        const SizedBox(width: 12),
-                        DropdownButton<String>(
-                          value: dialogOcasion,
-                          dropdownColor: AppTheme.background,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 13, color: AppTheme.textPrimary),
-                          items: [
-                            'casual',
-                            'trabajo',
-                            'fiesta',
-                            'deporte',
-                            'formal'
-                          ]
-                              .map((o) =>
-                              DropdownMenuItem(value: o, child: Text(o)))
-                              .toList(),
-                          onChanged: (v) =>
-                              setDialogState(() => dialogOcasion = v!),
-                        ),
-                      ]),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Público',
-                              style: GoogleFonts.dmSans(fontSize: 13)),
-                          Switch(
-                            value: dialogPublico,
-                            onChanged: (v) =>
-                                setDialogState(() => dialogPublico = v),
-                            activeColor: AppTheme.accent,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: Text('Cancelar',
-                            style: GoogleFonts.dmSans(
-                                color: AppTheme.textSecondary))),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _esPublico = dialogPublico;
-                          _ocasion = dialogOcasion;
-                        });
-                        Navigator.pop(ctx);
-                        _guardarOutfit();
-                      },
-                      child: const Text('GUARDAR'),
-                    ),
-                  ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppTheme.background,
+          title: Text('Guardar outfit',
+              style: GoogleFonts.cormorant(fontSize: 20)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _nombreCtrl,
+                autofocus: true,
+                style: GoogleFonts.dmSans(fontSize: 14),
+                decoration: const InputDecoration(
+                    hintText: 'ej. Look del lunes'),
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                Text('Ocasión:',
+                    style: GoogleFonts.dmSans(fontSize: 13)),
+                const SizedBox(width: 12),
+                DropdownButton<String>(
+                  value: dialogOcasion,
+                  dropdownColor: AppTheme.background,
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13, color: AppTheme.textPrimary),
+                  items: [
+                    'casual', 'trabajo', 'fiesta', 'deporte', 'formal'
+                  ]
+                      .map((o) => DropdownMenuItem(
+                      value: o, child: Text(o)))
+                      .toList(),
+                  onChanged: (v) =>
+                      setDialogState(() => dialogOcasion = v!),
                 ),
+              ]),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Público',
+                      style: GoogleFonts.dmSans(fontSize: 13)),
+                  Switch(
+                    value: dialogPublico,
+                    onChanged: (v) =>
+                        setDialogState(() => dialogPublico = v),
+                    activeColor: AppTheme.accent,
+                  ),
+                ],
+              ),
+            ],
           ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancelar',
+                    style: GoogleFonts.dmSans(
+                        color: AppTheme.textSecondary))),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _esPublico = dialogPublico;
+                  _ocasion = dialogOcasion;
+                });
+                Navigator.pop(ctx);
+                _guardarOutfit();
+              },
+              child: const Text('GUARDAR'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -342,19 +451,22 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Crear Outfit'),
+        title: Text(_editMode ? 'Editar Outfit' : 'Crear Outfit'),
         actions: [
           if (_placed.isNotEmpty)
             TextButton(
               onPressed: _saving ? null : _showNombreDialog,
               child: _saving
-                  ? const SizedBox(width: 18, height: 18,
+                  ? const SizedBox(
+                  width: 18, height: 18,
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: AppTheme.accent))
                   : Text('GUARDAR',
                   style: GoogleFonts.dmSans(
-                      fontSize: 13, fontWeight: FontWeight.w600,
-                      color: AppTheme.accent, letterSpacing: 1)),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.accent,
+                      letterSpacing: 1)),
             ),
         ],
       ),
@@ -391,21 +503,22 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.style_outlined, size: 40,
+                  Icon(Icons.style_outlined,
+                      size: 40,
                       color: AppTheme.textSecondary.withOpacity(0.3)),
                   const SizedBox(height: 8),
                   Text('Selecciona prendas abajo',
                       style: GoogleFonts.dmSans(
-                          fontSize: 12, color: AppTheme.textSecondary)),
+                          fontSize: 12,
+                          color: AppTheme.textSecondary)),
                 ],
               ),
             ),
-          ..._placed.map((item) =>
-              _DraggablePrenda(
-                key: ValueKey(item.prenda['id']),
-                item: item,
-                onLongPress: () => _showItemOptions(item),
-              )),
+          ..._placed.map((item) => _DraggablePrenda(
+            key: ValueKey(item.prenda['id']),
+            item: item,
+            onLongPress: () => _showItemOptions(item),
+          )),
           if (_placed.isNotEmpty)
             Positioned(
               top: 8, right: 8,
@@ -423,66 +536,16 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                     const Icon(Icons.refresh,
                         size: 13, color: AppTheme.textSecondary),
                     const SizedBox(width: 4),
-                    Text('Reset', style: GoogleFonts.dmSans(
-                        fontSize: 10, color: AppTheme.textSecondary)),
+                    Text('Reset',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 10,
+                            color: AppTheme.textSecondary)),
                   ]),
                 ),
               ),
             ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDraggableItem(_PlacedItem item) {
-    return ValueListenableBuilder<Offset>(
-      valueListenable: item.positionNotifier,
-      builder: (_, pos, __) =>
-          Positioned(
-            left: pos.dx,
-            top: pos.dy,
-            child: GestureDetector(
-              onPanUpdate: (d) {
-                // Solo actualiza el notifier — no llama a setState
-                item.positionNotifier.value = Offset(
-                  item.positionNotifier.value.dx + d.delta.dx,
-                  item.positionNotifier.value.dy + d.delta.dy,
-                );
-              },
-              onPanEnd: (_) {
-                // Sincroniza position al soltar para que el modelo quede actualizado
-                setState(() => item.position = item.positionNotifier.value);
-              },
-              onLongPress: () => _showItemOptions(item),
-              child: item.removingBg
-                  ? SizedBox(
-                  width: 130 * item.scale,
-                  height: 130 * item.scale,
-                  child: const Center(
-                      child: CircularProgressIndicator(
-                          color: AppTheme.accent, strokeWidth: 2)))
-                  : ColorFiltered(
-                colorFilter: item.buildColorFilter(),
-                child: SizedBox(
-                  width: 130 * item.scale,
-                  height: 130 * item.scale,
-                  child: item.removeBgApplied && item.processedUrl != null
-                      ? Image.memory(
-                    base64Decode(item.processedUrl!),
-                    fit: BoxFit.contain,
-                  )
-                      : item.imageUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                    imageUrl: item.imageUrl,
-                    fit: BoxFit.contain,
-                    errorWidget: (_, __, ___) =>
-                        _prendaPlaceholder(item.tipo),
-                  )
-                      : _prendaPlaceholder(item.tipo),
-                ),
-              ),
-            ),
-          ),
     );
   }
 
@@ -493,157 +556,236 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
       backgroundColor: AppTheme.background,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) =>
-          StatefulBuilder(
-            builder: (ctx, setSheet) =>
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                      20, 20, 20, MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item.nombre,
-                          style: GoogleFonts.cormorant(
-                              fontSize: 20, fontWeight: FontWeight.w500)),
-                      Text('Mantén pulsado para abrir opciones',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 11, color: AppTheme.textSecondary)),
-                      const Divider(height: 24),
-
-                      // Tamaño
-                      Text('Tamaño: ${(item.scale * 100).toStringAsFixed(0)}%',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12, fontWeight: FontWeight.w600)),
-                      Slider(
-                        value: item.scale,
-                        min: 0.2,
-                        max: 1.4,
-                        activeColor: AppTheme.accent,
-                        onChanged: (v) =>
-                            setSheet(() {
-                              item.scale = v;
-                              setState(() {});
-                            }),
-                      ),
-
-                      const Divider(height: 16),
-
-                      // Filtros — presets rápidos
-                      Text('Filtros',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 32,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: _presets.map((p) =>
-                              Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: GestureDetector(
-                                  onTap: () =>
-                                      setSheet(() {
-                                        item.brightness = p.brightness;
-                                        item.contrast = p.contrast;
-                                        item.saturation = p.saturation;
-                                        setState(() {});
-                                      }),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.cardBg,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                          color: AppTheme.border),
-                                    ),
-                                    child: Text(p.name,
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 11)),
-                                  ),
-                                ),
-                              )).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Sliders individuales
-                      _sheetSlider('Brillo', item.brightness, 0.5, 1.5, (v) {
-                        setSheet(() {
-                          item.brightness = v;
-                          setState(() {});
-                        });
-                      }),
-                      _sheetSlider('Contraste', item.contrast, 0.5, 1.5, (v) {
-                        setSheet(() {
-                          item.contrast = v;
-                          setState(() {});
-                        });
-                      }),
-                      _sheetSlider(
-                          'Saturación', item.saturation, 0.0, 2.0, (v) {
-                        setSheet(() {
-                          item.saturation = v;
-                          setState(() {});
-                        });
-                      }),
-
-                      const Divider(height: 20),
-
-                      // Acciones
-                      Row(children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: item.removeBgApplied ? null : () {
-                              Navigator.pop(ctx);
-                              _removeBg(item);
-                            },
-                            icon: const Icon(Icons.auto_fix_high, size: 15),
-                            label: Text(
-                                item.removeBgApplied
-                                    ? 'Fondo quitado'
-                                    : 'Quitar fondo',
-                                style: GoogleFonts.dmSans(fontSize: 12)),
-                            style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: AppTheme.border)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              setState(() =>
-                                  _placed.removeWhere(
-                                          (p) =>
-                                      p.prenda['id'] == item.prenda['id']));
-                              Navigator.pop(ctx);
-                            },
-                            icon: const Icon(Icons.delete_outline, size: 15),
-                            label: Text('Quitar',
-                                style: GoogleFonts.dmSans(fontSize: 12)),
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.error),
-                          ),
-                        ),
-                      ]),
-                    ],
-                  ),
-                ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 32,
           ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.nombre,
+                style: GoogleFonts.cormorant(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                'Mantén pulsado para abrir opciones',
+                style: GoogleFonts.dmSans(
+                  fontSize: 11,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+
+              const Divider(height: 24),
+
+              // Tamaño
+              Text(
+                'Tamaño: ${(item.scale * 100).toStringAsFixed(0)}%',
+                style: GoogleFonts.dmSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Slider(
+                value: item.scale,
+                min: 0.2,
+                max: 1.4,
+                activeColor: AppTheme.accent,
+                onChanged: (v) => setSheet(() {
+                  item.scale = v;
+                  setState(() {});
+                }),
+              ),
+
+              const Divider(height: 16),
+
+              // Presets filtros
+              Text(
+                'Filtros',
+                style: GoogleFonts.dmSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              SizedBox(
+                height: 32,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: _presets.map((p) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: GestureDetector(
+                        onTap: () => setSheet(() {
+                          item.brightness = p.brightness;
+                          item.contrast = p.contrast;
+                          item.saturation = p.saturation;
+                          setState(() {});
+                        }),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.cardBg,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.border),
+                          ),
+                          child: Text(
+                            p.name,
+                            style: GoogleFonts.dmSans(fontSize: 11),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              _sheetSlider('Brillo', item.brightness, 0.5, 1.5,
+                      (v) => setSheet(() {
+                    item.brightness = v;
+                    setState(() {});
+                  })),
+
+              _sheetSlider('Contraste', item.contrast, 0.5, 1.5,
+                      (v) => setSheet(() {
+                    item.contrast = v;
+                    setState(() {});
+                  })),
+
+              _sheetSlider('Saturación', item.saturation, 0.0, 2.0,
+                      (v) => setSheet(() {
+                    item.saturation = v;
+                    setState(() {});
+                  })),
+
+              const Divider(height: 20),
+
+              // 🔥 CAPAS (AÑADIDO AQUÍ)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          final idx = _placed.indexOf(item);
+                          if (idx > 0) {
+                            _placed.removeAt(idx);
+                            _placed.insert(idx - 1, item);
+                          }
+                        });
+                        Navigator.pop(ctx);
+                      },
+                      icon: const Icon(Icons.arrow_upward, size: 15),
+                      label: Text(
+                        'Subir capa',
+                        style: GoogleFonts.dmSans(fontSize: 12),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppTheme.border),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          final idx = _placed.indexOf(item);
+                          if (idx < _placed.length - 1) {
+                            _placed.removeAt(idx);
+                            _placed.insert(idx + 1, item);
+                          }
+                        });
+                        Navigator.pop(ctx);
+                      },
+                      icon: const Icon(Icons.arrow_downward, size: 15),
+                      label: Text(
+                        'Bajar capa',
+                        style: GoogleFonts.dmSans(fontSize: 12),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppTheme.border),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: item.removeBgApplied
+                          ? null
+                          : () {
+                        Navigator.pop(ctx);
+                        _removeBg(item);
+                      },
+                      icon: const Icon(Icons.auto_fix_high, size: 15),
+                      label: Text(
+                        item.removeBgApplied
+                            ? 'Fondo quitado'
+                            : 'Quitar fondo',
+                        style: GoogleFonts.dmSans(fontSize: 12),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppTheme.border),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() => _placed.removeWhere(
+                                (p) => p.prenda['id'] == item.prenda['id']));
+                        Navigator.pop(ctx);
+                      },
+                      icon: const Icon(Icons.delete_outline, size: 15),
+                      label: Text(
+                        'Quitar',
+                        style: GoogleFonts.dmSans(fontSize: 12),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _sheetSlider(String label, double value, double min, double max,
-      ValueChanged<double> onChanged) {
+  Widget _sheetSlider(String label, double value, double min,
+      double max, ValueChanged<double> onChanged) {
     return Row(children: [
       SizedBox(
         width: 82,
-        child: Text('$label\n${(value * 100).toStringAsFixed(0)}%',
+        child: Text(
+            '$label\n${(value * 100).toStringAsFixed(0)}%',
             style: GoogleFonts.dmSans(
                 fontSize: 10, color: AppTheme.textSecondary)),
       ),
@@ -664,10 +806,10 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
   Widget _buildPrendaSelector() {
     return Column(
       children: [
-        // Tabs categorías
         Container(
           decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppTheme.border))),
+              border:
+              Border(bottom: BorderSide(color: AppTheme.border))),
           child: Row(
             children: _categorias.keys.map((cat) {
               final sel = _categoriaSeleccionada == cat;
@@ -676,12 +818,16 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                   onTap: () =>
                       setState(() => _categoriaSeleccionada = cat),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding:
+                    const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
-                      border: Border(bottom: BorderSide(
-                        color: sel ? AppTheme.primary : Colors.transparent,
-                        width: 2,
-                      )),
+                      border: Border(
+                          bottom: BorderSide(
+                            color: sel
+                                ? AppTheme.primary
+                                : Colors.transparent,
+                            width: 2,
+                          )),
                     ),
                     child: Text(cat,
                         textAlign: TextAlign.center,
@@ -699,11 +845,11 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
             }).toList(),
           ),
         ),
-        // Lista horizontal de prendas — FIX: altura suficiente para no cortar
         Expanded(
           child: _loadingArmario
-              ? const Center(child: CircularProgressIndicator(
-              color: AppTheme.accent))
+              ? const Center(
+              child: CircularProgressIndicator(
+                  color: AppTheme.accent))
               : _prendasCategoria.isEmpty
               ? Center(
               child: Text('Sin prendas en esta categoría',
@@ -729,7 +875,6 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
       onTap: () => _togglePrenda(prenda),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        // FIX: más ancho y proporción correcta para no cortar la foto
         width: 100,
         margin: const EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
@@ -746,7 +891,6 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
           children: [
             Column(
               children: [
-                // FIX: imagen ocupa el 80% de la altura disponible sin recortar
                 Expanded(
                   flex: 4,
                   child: ClipRRect(
@@ -756,16 +900,15 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                         prenda['fotoUrl'].isNotEmpty
                         ? CachedNetworkImage(
                       imageUrl: prenda['fotoUrl'],
-                      // BoxFit.contain en vez de cover — no recorta
                       fit: BoxFit.contain,
                       width: double.infinity,
                       errorWidget: (_, __, ___) =>
-                          _prendaPlaceholder(prenda['tipo'] ?? ''),
+                          _prendaPlaceholder(
+                              prenda['tipo'] ?? ''),
                     )
                         : _prendaPlaceholder(prenda['tipo'] ?? ''),
                   ),
                 ),
-                // Nombre abajo
                 Expanded(
                   flex: 1,
                   child: Padding(
@@ -774,7 +917,8 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                     child: Text(
                       prenda['nombre'] ?? '',
                       style: GoogleFonts.dmSans(
-                          fontSize: 10, fontWeight: FontWeight.w600),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
@@ -789,7 +933,8 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                 child: Container(
                   width: 18, height: 18,
                   decoration: const BoxDecoration(
-                      color: AppTheme.primary, shape: BoxShape.circle),
+                      color: AppTheme.primary,
+                      shape: BoxShape.circle),
                   child: const Icon(Icons.check,
                       color: Colors.white, size: 12),
                 ),
@@ -803,8 +948,9 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
   Widget _prendaPlaceholder(String tipo) {
     return Container(
       color: AppTheme.border,
-      child: Center(child: Icon(_tipoIcon(tipo),
-          size: 28, color: AppTheme.textSecondary)),
+      child: Center(
+          child: Icon(_tipoIcon(tipo),
+              size: 28, color: AppTheme.textSecondary)),
     );
   }
 
@@ -823,6 +969,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
   }
 }
 
+// ─── Widget draggable independiente ──────────────────────────────────────────
 class _DraggablePrenda extends StatefulWidget {
   final _PlacedItem item;
   final VoidCallback onLongPress;
@@ -854,7 +1001,6 @@ class _DraggablePrendaState extends State<_DraggablePrenda> {
     return Positioned(
       left: _position.dx,
       top: _position.dy,
-      // RepaintBoundary aisla este widget del repaint del padre
       child: RepaintBoundary(
         child: GestureDetector(
           onPanUpdate: (d) {
@@ -878,27 +1024,30 @@ class _DraggablePrendaState extends State<_DraggablePrenda> {
             child: SizedBox(
               width: size,
               height: size,
-              child: item.removeBgApplied && item.processedUrl != null
+              child: item.removeBgApplied &&
+                  item.processedUrl != null
                   ? Image.memory(
                 base64Decode(item.processedUrl!),
                 fit: BoxFit.contain,
-                gaplessPlayback: true, // evita parpadeo al rebuild
+                gaplessPlayback: true,
               )
                   : item.imageUrl.isNotEmpty
                   ? Image.network(
                 item.imageUrl,
                 fit: BoxFit.contain,
-                gaplessPlayback: true, // clave anti-parpadeo
+                gaplessPlayback: true,
                 errorBuilder: (_, __, ___) => Container(
                   color: AppTheme.border,
-                  child: const Icon(Icons.checkroom_outlined,
+                  child: const Icon(
+                      Icons.checkroom_outlined,
                       size: 28,
                       color: AppTheme.textSecondary),
                 ),
               )
                   : Container(
                 color: AppTheme.border,
-                child: const Icon(Icons.checkroom_outlined,
+                child: const Icon(
+                    Icons.checkroom_outlined,
                     size: 28,
                     color: AppTheme.textSecondary),
               ),

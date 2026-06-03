@@ -450,4 +450,33 @@ class ApiService {
     return [];
   }
 
+  // ─── POSICIONES OUTFIT ──────────────────────────────────────────────────────
+
+  static Future<List<dynamic>> getPosiciones(int outfitId) async {
+    final url = '$baseUrl/outfits/$outfitId/posiciones';
+    print('>>> GET posiciones: $url');
+    final res = await http.get(
+      Uri.parse('$baseUrl/outfits/$outfitId/posiciones'),
+      headers: await _headers(),
+    );
+    print('>>> Status posiciones: ${res.statusCode}');
+    print('>>> Body posiciones: ${res.body}');
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Error al obtener posiciones');
+  }
+
+  static Future<void> guardarPosiciones(
+      int outfitId, List<Map<String, dynamic>> posiciones) async {
+    print('>>> Guardando ${posiciones.length} posiciones para outfit $outfitId');
+    print('>>> Datos: ${jsonEncode(posiciones)}');
+    final res = await http.post(
+      Uri.parse('$baseUrl/outfits/$outfitId/posiciones'),
+      headers: await _headers(),
+      body: jsonEncode(posiciones),
+    );
+    print('>>> Guardar posiciones status: ${res.statusCode} body: ${res.body}');
+    print('>>> Status guardar posiciones: ${res.statusCode}');
+    print('>>> Body: ${res.body}');
+    if (res.statusCode != 200) throw Exception('Error al guardar posiciones');
+  }
 }
