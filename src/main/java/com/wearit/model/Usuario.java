@@ -33,6 +33,9 @@ public class Usuario {
     private String password;
 
     private String fotoPerfil;
+    
+    @Column(nullable = false)
+    private String tema = "neutro";
 
     @Column(name = "fecha_registro")
     private LocalDateTime fechaRegistro;

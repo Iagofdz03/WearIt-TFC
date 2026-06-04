@@ -15,4 +15,6 @@ public interface OutfitPrendaPosicionRepository
 
 	@Transactional
 	void deleteByOutfitId(Long outfitId);
+	
+	
 }

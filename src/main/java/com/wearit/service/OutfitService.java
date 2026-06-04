@@ -4,10 +4,13 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wearit.model.Outfit;
+import com.wearit.repository.FavoritoRepository;
 import com.wearit.repository.HistorialOutfitRepository;
 import com.wearit.repository.LikeRepository;
+import com.wearit.repository.OutfitPrendaPosicionRepository;
 import com.wearit.repository.OutfitRepository;
 
 @Service
@@ -21,6 +24,14 @@ public class OutfitService {
 
     @Autowired
     private HistorialOutfitRepository historialRepository;
+    
+    // ✅ NUEVO: Repositorio para posiciones
+    @Autowired
+    private OutfitPrendaPosicionRepository posicionRepository;
+    
+    // ✅ NUEVO: Repositorio para favoritos
+    @Autowired
+    private FavoritoRepository favoritoRepository;
 
     public List<Outfit> listarTodos() {
         return outfitRepository.findAll();
@@ -30,7 +41,6 @@ public class OutfitService {
         return outfitRepository.findByUsuarioId(usuarioId);
     }
 
-    // Necesario para OutfitController /publicos y /ranking
     public List<Outfit> listarPublicos() {
         return outfitRepository.findByEsPublicoTrue();
     }
@@ -50,12 +60,25 @@ public class OutfitService {
         outfit.setOcasion(datos.getOcasion());
         outfit.setEsPublico(datos.getEsPublico());
         outfit.setPrendas(datos.getPrendas());
+        outfit.setFotoPortada(datos.getFotoPortada());
         return outfitRepository.save(outfit);
     }
 
+    @Transactional
     public void eliminar(Long id) {
+        // 1. Eliminar posiciones
+        posicionRepository.deleteByOutfitId(id);
+        
+        // 2. Eliminar favoritos
+        favoritoRepository.deleteByOutfitId(id);
+        
+        // 3. Eliminar likes
         likeRepository.deleteByOutfitId(id);
+        
+        // 4. Eliminar historial
         historialRepository.deleteByOutfitId(id);
+        
+        // 5. Finalmente eliminar el outfit
         outfitRepository.deleteById(id);
     }
 }

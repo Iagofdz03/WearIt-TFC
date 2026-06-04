@@ -1,6 +1,7 @@
 package com.wearit.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -45,6 +46,14 @@ public class UsuarioController {
         return usuarioService.actualizar(id, datos);
     }
 
+ // Endpoint específico para cambiar el tema — más limpio que actualizar todo
+    @PatchMapping("/{id}/tema")
+    public Usuario cambiarTema(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        return usuarioService.cambiarTema(id, body.get("tema"));
+    }
+    
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {
         usuarioService.eliminar(id);

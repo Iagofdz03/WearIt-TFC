@@ -29,8 +29,11 @@ public class OutfitController {
     }
 
     @GetMapping("/usuario/{usuarioId}")
-    public List<Outfit> listarPorUsuario(@PathVariable Long usuarioId) {
-        return outfitService.listarPorUsuario(usuarioId);
+    public List<Map<String, Object>> listarPorUsuario(@PathVariable Long usuarioId) {
+        return outfitService.listarPorUsuario(usuarioId)
+            .stream()
+            .map(this::enriquecerOutfit)
+            .toList();
     }
 
     // Devuelve outfits públicos con info del creador incluida
@@ -119,6 +122,7 @@ public class OutfitController {
         map.put("fechaCreacion", outfit.getFechaCreacion() != null
             ? outfit.getFechaCreacion().toString() : "");
         map.put("likes", likeService.contarPorOutfit(outfit.getId()));
+        map.put("fotoPortada", outfit.getFotoPortada() != null ? outfit.getFotoPortada() : "");
 
         // Datos del creador
         if (outfit.getUsuario() != null) {

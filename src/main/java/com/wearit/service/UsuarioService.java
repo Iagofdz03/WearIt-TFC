@@ -46,9 +46,14 @@ public class UsuarioService {
         usuario.setFotoPerfil(datos.getFotoPerfil());
         return usuarioRepository.save(usuario);
     }
+    
+    public Usuario cambiarTema(Long id, String tema) {
+        Usuario usuario = buscarPorId(id);
+        usuario.setTema(tema);
+        return usuarioRepository.save(usuario);
+    }
 
     public void eliminar(Long id) {
         usuarioRepository.deleteById(id);
     }
 }
-
