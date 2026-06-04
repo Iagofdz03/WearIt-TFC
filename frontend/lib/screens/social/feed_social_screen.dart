@@ -118,7 +118,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
             style: GoogleFonts.dmSans(fontSize: 13),
             decoration: InputDecoration(
               hintText: 'Buscar outfits...',
-              prefixIcon: const Icon(Icons.search,
+              prefixIcon: Icon(Icons.search,
                   size: 18, color: AppTheme.textSecondary),
               suffixIcon: _busqueda.isNotEmpty
                   ? IconButton(
@@ -149,7 +149,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
                   onTap: () => setState(() => _filtroOcasion = oc),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                         horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
                       color: sel ? AppTheme.primary : AppTheme.cardBg,
@@ -172,7 +172,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
         // Feed estilo Pinterest — 3 columnas
         Expanded(
           child: _loading
-              ? const Center(child: CircularProgressIndicator(
+              ? Center(child: CircularProgressIndicator(
               color: AppTheme.accent))
               : RefreshIndicator(
             onRefresh: _loadFeed,
@@ -222,7 +222,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
       future: ApiService.getRanking(),
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(
+          return Center(child: CircularProgressIndicator(
               color: AppTheme.accent));
         }
         final ranking = snap.data ?? [];
@@ -247,8 +247,8 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
     return GestureDetector(
       onTap: () => _verOutfitCompleto(outfit),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppTheme.cardBg,
           borderRadius: BorderRadius.circular(8),
@@ -278,7 +278,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
                   ? Image.network(fotoUrl, fit: BoxFit.contain,
                   gaplessPlayback: true)
                   : Container(color: AppTheme.border,
-                  child: const Icon(Icons.style_outlined,
+                  child: Icon(Icons.style_outlined,
                       size: 20, color: AppTheme.textSecondary)),
             ),
           ),
@@ -298,7 +298,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
           )),
           // Likes
           Row(children: [
-            const Icon(Icons.favorite, size: 14, color: AppTheme.accent),
+            Icon(Icons.favorite, size: 14, color: AppTheme.accent),
             const SizedBox(width: 4),
             Text('$likes', style: GoogleFonts.dmSans(
                 fontSize: 13, fontWeight: FontWeight.w600)),
@@ -330,7 +330,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
           return Column(children: [
             // Handle
             Container(
-              margin: const EdgeInsets.only(top: 12),
+              margin: EdgeInsets.only(top: 12),
               width: 40, height: 4,
               decoration: BoxDecoration(
                 color: AppTheme.border,
@@ -399,8 +399,8 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
                           color: AppTheme.textSecondary)),
                   const SizedBox(height: 10),
                   ...prendas.map((p) => Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(10),
+                    margin: EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: AppTheme.cardBg,
                       borderRadius: BorderRadius.circular(8),
@@ -416,7 +416,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
                               ? Image.network(p['fotoUrl'],
                               fit: BoxFit.contain, gaplessPlayback: true)
                               : Container(color: AppTheme.border,
-                              child: const Icon(Icons.checkroom_outlined,
+                              child: Icon(Icons.checkroom_outlined,
                                   color: AppTheme.textSecondary, size: 20)),
                         ),
                       ),
@@ -446,7 +446,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
 
   Widget _buildPrendaDetalle(Map<String, dynamic> p) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppTheme.cardBg,
         borderRadius: BorderRadius.circular(12),
@@ -455,7 +455,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
       child: Row(children: [
         // Foto prenda
         ClipRRect(
-          borderRadius: const BorderRadius.horizontal(
+          borderRadius: BorderRadius.horizontal(
               left: Radius.circular(11)),
           child: SizedBox(
             width: 100, height: 100,
@@ -463,7 +463,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
                 ? Image.network(p['fotoUrl'],
                 fit: BoxFit.contain, gaplessPlayback: true)
                 : Container(color: AppTheme.border,
-                child: const Icon(Icons.checkroom_outlined,
+                child: Icon(Icons.checkroom_outlined,
                     color: AppTheme.textSecondary)),
           ),
         ),
@@ -475,7 +475,7 @@ class _FeedSocialScreenState extends State<FeedSocialScreen>
             Text(p['nombre'] ?? '',
                 style: GoogleFonts.dmSans(
                     fontSize: 14, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text('${p['tipo'] ?? ''} · ${p['color'] ?? ''}',
                 style: GoogleFonts.dmSans(
                     fontSize: 12, color: AppTheme.textSecondary)),
@@ -580,13 +580,13 @@ class _OutfitCard extends StatelessWidget {
                             gaplessPlayback: true,
                             width: double.infinity,
                             errorBuilder: (_, __, ___) =>
-                            const Icon(
-                                Icons.checkroom_outlined,
-                                size: 16,
-                                color: AppTheme.textSecondary),
+                                Icon(
+                                    Icons.checkroom_outlined,
+                                    size: 16,
+                                    color: AppTheme.textSecondary),
                           ),
                         )
-                            : const Center(
+                            : Center(
                             child: Icon(Icons.checkroom_outlined,
                                 size: 16,
                                 color: AppTheme.textSecondary)),

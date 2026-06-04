@@ -256,8 +256,8 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const CircularProgressIndicator(color: AppTheme.accent),
-        const SizedBox(height: 12),
+        CircularProgressIndicator(color: AppTheme.accent),
+        SizedBox(height: 12),
         Text(msg, style: GoogleFonts.dmSans(
             fontSize: 13, color: AppTheme.textSecondary)),
       ],
@@ -272,7 +272,7 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
   Widget _buildDropdown(List<String> items, String value,
       ValueChanged<String?> onChanged) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: AppTheme.cardBg,
         borderRadius: BorderRadius.circular(4),
@@ -297,9 +297,9 @@ class _PrendaFormScreenState extends State<PrendaFormScreen> {
   Widget _imgHint() => Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Icon(Icons.add_photo_alternate_outlined,
+      Icon(Icons.add_photo_alternate_outlined,
           size: 40, color: AppTheme.textSecondary),
-      const SizedBox(height: 8),
+      SizedBox(height: 8),
       Text('Añadir foto (fondo se quitará automáticamente)',
           style: GoogleFonts.dmSans(
               fontSize: 12, color: AppTheme.textSecondary),

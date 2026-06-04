@@ -479,4 +479,17 @@ class ApiService {
     print('>>> Body: ${res.body}');
     if (res.statusCode != 200) throw Exception('Error al guardar posiciones');
   }
+// ─── TEMA ────────────────────────────────────────────────────────────────────
+  // Añade este método en ApiService junto a actualizarUsuario
+
+  static Future<void> cambiarTema(int usuarioId, String tema) async {
+    final res = await http.patch(
+      Uri.parse('$baseUrl/usuarios/$usuarioId/tema'),
+      headers: await _headers(),
+      body: jsonEncode({'tema': tema}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Error al cambiar tema');
+    }
+  }
 }

@@ -88,7 +88,7 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
               children: [
                 Text('Sugerir según el tiempo',
                     style: GoogleFonts.cormorant(fontSize: 18, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(children: [
                   Expanded(
                     child: TextField(
@@ -96,31 +96,31 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
                       style: GoogleFonts.dmSans(fontSize: 13),
                       decoration: InputDecoration(
                         hintText: 'Ciudad (ej. Madrid)',
-                        prefixIcon: const Icon(Icons.location_on_outlined, size: 16),
+                        prefixIcon: Icon(Icons.location_on_outlined, size: 16),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       ),
                       onSubmitted: (_) => _cargarConTiempo(),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: _cargarConTiempo,
                     style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)),
-                    child: const Icon(Icons.search, size: 18),
+                    child: Icon(Icons.search, size: 18),
                   ),
                 ]),
                 if (_tiempo != null) ...[
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Row(children: [
                     Image.network(_tiempo!['icono'] ?? '',
-                        width: 36, height: 36, errorBuilder: (_, __, ___) => const SizedBox()),
-                    const SizedBox(width: 8),
+                        width: 36, height: 36, errorBuilder: (_, __, ___) => SizedBox()),
+                    SizedBox(width: 8),
                     Text(
                       '${_tiempo!['temperatura']?.toStringAsFixed(0)}°C en ${_tiempo!['ciudad']}',
                       style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -169,12 +169,12 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
               },
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
 
           // Sugerencias
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+                ? Center(child: CircularProgressIndicator(color: AppTheme.accent))
                 : _sugerencias.isEmpty
                 ? _buildEmpty()
                 : ListView.builder(
@@ -203,13 +203,13 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
           // Header
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppTheme.primary,
               borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
             ),
             child: Row(children: [
-              const Icon(Icons.auto_awesome, color: AppTheme.accentLight, size: 18),
-              const SizedBox(width: 8),
+              Icon(Icons.auto_awesome, color: AppTheme.accentLight, size: 18),
+              SizedBox(width: 8),
               Text(sug['nombre'] ?? '',
                   style: GoogleFonts.cormorant(
                       fontSize: 18, fontWeight: FontWeight.w400, color: AppTheme.background)),
@@ -236,8 +236,8 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.checkroom_outlined, size: 16, color: AppTheme.textSecondary),
-                        const SizedBox(height: 2),
+                        Icon(Icons.checkroom_outlined, size: 16, color: AppTheme.textSecondary),
+                        SizedBox(height: 2),
                         Text(p['nombre'] ?? '',
                             style: GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w600),
                             maxLines: 1,
@@ -271,10 +271,10 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
         children: [
           Icon(Icons.auto_awesome_outlined, size: 64,
               color: AppTheme.textSecondary.withOpacity(0.3)),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text('Sin sugerencias', style: GoogleFonts.cormorant(
               fontSize: 22, color: AppTheme.textSecondary)),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text('Añade prendas a tu armario para recibir ideas',
               style: GoogleFonts.dmSans(fontSize: 13, color: AppTheme.textSecondary),
               textAlign: TextAlign.center),

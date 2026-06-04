@@ -1,4 +1,3 @@
-
 // Widget reutilizable — ponlo donde quieras en feed_screen o sugerencias_screen
 // Uso: ForecastWidget(ciudad: 'Madrid')
 
@@ -44,7 +43,7 @@ class _ForecastWidgetState extends State<ForecastWidget> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const SizedBox(
+      return SizedBox(
         height: 80,
         child: Center(child: CircularProgressIndicator(
             color: AppTheme.accent, strokeWidth: 2)),
@@ -85,8 +84,8 @@ class _ForecastWidgetState extends State<ForecastWidget> {
 
     return Container(
       width: 64,
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      margin: EdgeInsets.only(right: 8),
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       decoration: BoxDecoration(
         color: AppTheme.background.withOpacity(0.12),
         borderRadius: BorderRadius.circular(10),
@@ -101,8 +100,8 @@ class _ForecastWidgetState extends State<ForecastWidget> {
           Image.network(dia['icono'] ?? '',
               width: 28, height: 28,
               errorBuilder: (_, __, ___) =>
-              const Icon(Icons.wb_sunny_outlined,
-                  size: 20, color: AppTheme.accentLight)),
+                  Icon(Icons.wb_sunny_outlined,
+                      size: 20, color: AppTheme.accentLight)),
           Text('${(dia['tempMax'] as num).toStringAsFixed(0)}°/'
               '${(dia['tempMin'] as num).toStringAsFixed(0)}°',
               style: GoogleFonts.dmSans(

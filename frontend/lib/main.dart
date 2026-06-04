@@ -1,30 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'theme/app_theme.dart';
 import 'api/api_service.dart';
 import 'screens/auth/auth_screen.dart';
 import 'screens/main/main_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
+
+  // Cargar tema guardado localmente para evitar flash al arrancar
+  final prefs = await SharedPreferences.getInstance();
+  final temaLocal = prefs.getString('tema_usuario') ?? 'neutro';
+  AppTheme.setTema(temaLocal);
+
   runApp(const WearItApp());
 }
+
+// Notifier global para reconstruir la app al cambiar tema
+final temaNotifier = ValueNotifier<String>('neutro');
 
 class WearItApp extends StatelessWidget {
   const WearItApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'WearIt',
-      theme: AppTheme.theme,
-      debugShowCheckedModeBanner: false,
-      home: const SplashScreen(),
+    return ValueListenableBuilder<String>(
+      valueListenable: temaNotifier,
+      builder: (_, tema, __) {
+        AppTheme.setTema(tema);
+        return MaterialApp(
+          title: 'WearIt',
+          theme: AppTheme.theme,
+          debugShowCheckedModeBanner: false,
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }
@@ -57,6 +73,18 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _checkAuth() async {
     await Future.delayed(const Duration(milliseconds: 1800));
     final token = await ApiService.getToken();
+
+    // Si hay sesión, cargar el tema del usuario desde el servidor
+    if (token != null) {
+      try {
+        final me = await ApiService.getMe();
+        final tema = me['tema'] ?? 'neutro';
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('tema_usuario', tema);
+        temaNotifier.value = tema; // actualiza la app
+      } catch (_) {}
+    }
+
     if (mounted) {
       Navigator.pushReplacement(
         context,
@@ -100,10 +128,9 @@ class _SplashScreenState extends State<SplashScreen>
                     letterSpacing: -2,
                   ),
                 ),
-                const SizedBox(height: 32),
-                Container(
-                    width: 40, height: 1.5, color: AppTheme.accent),
-                const SizedBox(height: 20),
+                SizedBox(height: 32),
+                Container(width: 40, height: 1.5, color: AppTheme.accent),
+                SizedBox(height: 20),
                 Text(
                   'Tu armario inteligente',
                   style: GoogleFonts.dmSans(

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../feed/feed_screen.dart';
 import '../prendas/prendas_screen.dart';
 import '../outfits/outfits_screen.dart';
-import '../social/feed_social_screen.dart';
+import '../social/feed_social_screen.dart'; // ← nueva tab
 import '../perfil/perfil_screen.dart';
 import '../../theme/app_theme.dart';
 
@@ -21,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
     const FeedScreen(),
     const PrendasScreen(),
     const OutfitsScreen(),
-    const FeedSocialScreen(),
+    const FeedSocialScreen(), // ← Ideas → Comunidad
     const PerfilScreen(),
   ];
 
@@ -33,7 +33,7 @@ class _MainScreenState extends State<MainScreen> {
     _NavItem(icon: Icons.style_outlined,
         activeIcon: Icons.style, label: 'Outfits'),
     _NavItem(icon: Icons.people_outline,
-        activeIcon: Icons.people, label: 'Comunidad'),
+        activeIcon: Icons.people, label: 'Comunidad'), // ← icono actualizado
     _NavItem(icon: Icons.person_outline,
         activeIcon: Icons.person, label: 'Perfil'),
   ];
@@ -43,7 +43,7 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(top: BorderSide(color: AppTheme.border)),
           color: AppTheme.background,
         ),

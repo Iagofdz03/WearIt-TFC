@@ -87,7 +87,7 @@ class _OutfitCardState extends State<OutfitCard> {
           Expanded(
             child: ClipRRect(
               borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(8)),
+              BorderRadius.vertical(top: Radius.circular(8)),
               child: fotoUrl != null && fotoUrl.isNotEmpty
                   ? CachedNetworkImage(
                 imageUrl: fotoUrl,
@@ -95,7 +95,7 @@ class _OutfitCardState extends State<OutfitCard> {
                 width: double.infinity,
                 placeholder: (_, __) => Container(
                     color: AppTheme.border,
-                    child: const Center(
+                    child: Center(
                         child: CircularProgressIndicator(
                             color: AppTheme.accent, strokeWidth: 1))),
                 errorWidget: (_, __, ___) => _placeholder(),
@@ -145,7 +145,7 @@ class _OutfitCardState extends State<OutfitCard> {
                             size: 16,
                             color: _liked ? AppTheme.accent : AppTheme.textSecondary,
                           ),
-                          const SizedBox(width: 3),
+                          SizedBox(width: 3),
                           Text(
                             '$_count',
                             style: GoogleFonts.dmSans(

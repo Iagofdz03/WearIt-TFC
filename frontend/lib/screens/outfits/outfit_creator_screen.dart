@@ -114,6 +114,7 @@ class OutfitCreatorScreen extends StatefulWidget {
 }
 
 class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
+  String? _fotoPortada;
   List<dynamic> _armario = [];
   bool _loadingArmario = true;
   String _categoriaSeleccionada = 'Tops';
@@ -283,11 +284,11 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
       }
     }
   }
-    //Guardar
+  //Guardar
   Future<void> _guardarOutfit() async {
     if (_placed.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Añade al menos una prenda'),
           backgroundColor: AppTheme.error,
         ),
@@ -308,6 +309,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
         'nombre': _nombreCtrl.text.trim(),
         'ocasion': _ocasion,
         'esPublico': _esPublico,
+        'fotoPortada': _fotoPortada ?? '',
         'usuario': {'id': widget.userId},
         'prendas': _placed.map((p) => {'id': p.prenda['id']}).toList(),
       };
@@ -344,7 +346,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('¡Outfit guardado!'),
             backgroundColor: AppTheme.success,
           ),
@@ -365,86 +367,127 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
       if (mounted) setState(() => _saving = false);
     }
   }
-
   void _showNombreDialog() {
     bool dialogPublico = _esPublico;
     String dialogOcasion = _ocasion;
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.background,
-          title: Text('Guardar outfit',
-              style: GoogleFonts.cormorant(fontSize: 20)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nombreCtrl,
-                autofocus: true,
-                style: GoogleFonts.dmSans(fontSize: 14),
-                decoration: const InputDecoration(
-                    hintText: 'ej. Look del lunes'),
-              ),
-              const SizedBox(height: 16),
-              Row(children: [
-                Text('Ocasión:',
-                    style: GoogleFonts.dmSans(fontSize: 13)),
-                const SizedBox(width: 12),
-                DropdownButton<String>(
-                  value: dialogOcasion,
-                  dropdownColor: AppTheme.background,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13, color: AppTheme.textPrimary),
-                  items: [
-                    'casual', 'trabajo', 'fiesta', 'deporte', 'formal'
-                  ]
-                      .map((o) => DropdownMenuItem(
-                      value: o, child: Text(o)))
-                      .toList(),
-                  onChanged: (v) =>
-                      setDialogState(() => dialogOcasion = v!),
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            backgroundColor: AppTheme.background,
+            title: Text('Guardar outfit',
+                style: GoogleFonts.cormorant(fontSize: 20)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _nombreCtrl,
+                  autofocus: true,
+                  style: GoogleFonts.dmSans(fontSize: 14),
+                  decoration: const InputDecoration(
+                      hintText: 'ej. Look del lunes'),
                 ),
-              ]),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Público',
+                const SizedBox(height: 16),
+                Row(children: [
+                  Text('Ocasión:',
                       style: GoogleFonts.dmSans(fontSize: 13)),
-                  Switch(
-                    value: dialogPublico,
+                  const SizedBox(width: 12),
+                  DropdownButton<String>(
+                    value: dialogOcasion,
+                    dropdownColor: AppTheme.background,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 13, color: AppTheme.textPrimary),
+                    items: [
+                      'casual', 'trabajo', 'fiesta', 'deporte', 'formal'
+                    ]
+                        .map((o) => DropdownMenuItem(
+                        value: o, child: Text(o)))
+                        .toList(),
                     onChanged: (v) =>
-                        setDialogState(() => dialogPublico = v),
-                    activeColor: AppTheme.accent,
+                        setDialogState(() => dialogOcasion = v!),
                   ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
+                ]),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Público',
+                        style: GoogleFonts.dmSans(fontSize: 13)),
+                    Switch(
+                      value: dialogPublico,
+                      onChanged: (v) =>
+                          setDialogState(() => dialogPublico = v),
+                      activeColor: AppTheme.accent,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text('Foto de portada',
+                    style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 70,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _placed.map((item) {
+                        final selected = _fotoPortada == item.imageUrl;
+                        return GestureDetector(
+                          onTap: () => setDialogState(() {
+                            _fotoPortada = item.imageUrl;
+                          }),
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            margin: const EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: selected ? AppTheme.accent : AppTheme.border,
+                                width: selected ? 2 : 1,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(7),
+                              child: item.imageUrl.isNotEmpty
+                                  ? Image.network(item.imageUrl, fit: BoxFit.cover)
+                                  : Icon(Icons.checkroom_outlined,
+                                  color: AppTheme.textSecondary),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],  // ← Cierra el Column
+            ),  // ← Cierra el content
+            actions: [
+              TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: Text('Cancelar',
                     style: GoogleFonts.dmSans(
-                        color: AppTheme.textSecondary))),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _esPublico = dialogPublico;
-                  _ocasion = dialogOcasion;
-                });
-                Navigator.pop(ctx);
-                _guardarOutfit();
-              },
-              child: const Text('GUARDAR'),
-            ),
-          ],
-        ),
+                        color: AppTheme.textSecondary)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _esPublico = dialogPublico;
+                    _ocasion = dialogOcasion;
+                  });
+                  Navigator.pop(ctx);
+                  _guardarOutfit();
+                },
+                child: const Text('GUARDAR'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
-
   // ─── BUILD ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -457,7 +500,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
             TextButton(
               onPressed: _saving ? null : _showNombreDialog,
               child: _saving
-                  ? const SizedBox(
+                  ? SizedBox(
                   width: 18, height: 18,
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: AppTheme.accent))
@@ -485,7 +528,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
     return Container(
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0EDE8),
+        color: Color(0xFFF0EDE8),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.border),
       ),
@@ -525,7 +568,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
               child: GestureDetector(
                 onTap: () => setState(() => _placed.clear()),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                       horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: AppTheme.background,
@@ -533,7 +576,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                     border: Border.all(color: AppTheme.border),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.refresh,
+                    Icon(Icons.refresh,
                         size: 13, color: AppTheme.textSecondary),
                     const SizedBox(width: 4),
                     Text('Reset',
@@ -696,7 +739,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                         style: GoogleFonts.dmSans(fontSize: 12),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppTheme.border),
+                        side: BorderSide(color: AppTheme.border),
                       ),
                     ),
                   ),
@@ -721,7 +764,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                         style: GoogleFonts.dmSans(fontSize: 12),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppTheme.border),
+                        side: BorderSide(color: AppTheme.border),
                       ),
                     ),
                   ),
@@ -748,7 +791,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                         style: GoogleFonts.dmSans(fontSize: 12),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppTheme.border),
+                        side: BorderSide(color: AppTheme.border),
                       ),
                     ),
                   ),
@@ -807,7 +850,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
     return Column(
       children: [
         Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
               border:
               Border(bottom: BorderSide(color: AppTheme.border))),
           child: Row(
@@ -847,7 +890,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
         ),
         Expanded(
           child: _loadingArmario
-              ? const Center(
+              ? Center(
               child: CircularProgressIndicator(
                   color: AppTheme.accent))
               : _prendasCategoria.isEmpty
@@ -876,7 +919,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: 100,
-        margin: const EdgeInsets.only(right: 10),
+        margin: EdgeInsets.only(right: 10),
         decoration: BoxDecoration(
           color: selected
               ? AppTheme.primary.withOpacity(0.05)
@@ -894,7 +937,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                 Expanded(
                   flex: 4,
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
+                    borderRadius: BorderRadius.vertical(
                         top: Radius.circular(9)),
                     child: prenda['fotoUrl'] != null &&
                         prenda['fotoUrl'].isNotEmpty
@@ -932,7 +975,7 @@ class _OutfitCreatorScreenState extends State<OutfitCreatorScreen> {
                 top: 4, right: 4,
                 child: Container(
                   width: 18, height: 18,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                       color: AppTheme.primary,
                       shape: BoxShape.circle),
                   child: const Icon(Icons.check,
@@ -1016,7 +1059,7 @@ class _DraggablePrendaState extends State<_DraggablePrenda> {
           child: item.removingBg
               ? SizedBox(
               width: size, height: size,
-              child: const Center(
+              child: Center(
                   child: CircularProgressIndicator(
                       color: AppTheme.accent, strokeWidth: 2)))
               : ColorFiltered(
@@ -1038,7 +1081,7 @@ class _DraggablePrendaState extends State<_DraggablePrenda> {
                 gaplessPlayback: true,
                 errorBuilder: (_, __, ___) => Container(
                   color: AppTheme.border,
-                  child: const Icon(
+                  child: Icon(
                       Icons.checkroom_outlined,
                       size: 28,
                       color: AppTheme.textSecondary),
@@ -1046,7 +1089,7 @@ class _DraggablePrendaState extends State<_DraggablePrenda> {
               )
                   : Container(
                 color: AppTheme.border,
-                child: const Icon(
+                child: Icon(
                     Icons.checkroom_outlined,
                     size: 28,
                     color: AppTheme.textSecondary),

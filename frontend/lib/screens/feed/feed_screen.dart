@@ -98,7 +98,7 @@ class _FeedScreenState extends State<FeedScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+          ? Center(child: CircularProgressIndicator(color: AppTheme.accent))
           : RefreshIndicator(
         onRefresh: _init,
         color: AppTheme.accent,
@@ -159,8 +159,8 @@ class _FeedScreenState extends State<FeedScreen> {
     final saludo = hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 56, 20, 24),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.fromLTRB(20, 56, 20, 24),
+      decoration: BoxDecoration(
         color: AppTheme.primary,
       ),
       child: Column(
@@ -224,7 +224,7 @@ class _FeedScreenState extends State<FeedScreen> {
             const SizedBox(width: 8),
             IconButton(
               onPressed: _buscarCiudad,
-              icon: const Icon(Icons.search,
+              icon: Icon(Icons.search,
                   color: AppTheme.background, size: 20),
             ),
           ]),
@@ -238,8 +238,8 @@ class _FeedScreenState extends State<FeedScreen> {
     if (_tiempo == null) {
       return Container(
         color: AppTheme.primary,
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        child: const Center(
+        padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Center(
             child: CircularProgressIndicator(
                 color: AppTheme.accentLight, strokeWidth: 2)),
       );
@@ -256,7 +256,7 @@ class _FeedScreenState extends State<FeedScreen> {
             Image.network(
               _tiempo!['icono'] ?? '',
               width: 56, height: 56,
-              errorBuilder: (_, __, ___) => const Icon(
+              errorBuilder: (_, __, ___) => Icon(
                   Icons.wb_sunny_outlined,
                   color: AppTheme.accentLight, size: 46),
             ),
@@ -282,7 +282,7 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
             const Spacer(),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: AppTheme.accent,
                 borderRadius: BorderRadius.circular(20),
@@ -307,7 +307,7 @@ class _FeedScreenState extends State<FeedScreen> {
   // ── Título de sección ──────────────────────────────────────────────────────
   Widget _buildSeccionTitulo(String titulo, IconData icono) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 12),
       child: Row(children: [
         Icon(icono, size: 18, color: AppTheme.accent),
         const SizedBox(width: 8),
@@ -326,7 +326,7 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget _buildTrending() {
     if (_trending.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         child: Text('Sin tendencias aún',
             style: GoogleFonts.dmSans(
                 fontSize: 13, color: AppTheme.textSecondary)),
@@ -350,7 +350,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
     return Container(
       width: 140,
-      margin: const EdgeInsets.only(right: 12),
+      margin: EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         color: AppTheme.cardBg,
         borderRadius: BorderRadius.circular(10),
@@ -364,7 +364,7 @@ class _FeedScreenState extends State<FeedScreen> {
           Expanded(
             child: ClipRRect(
               borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(9)),
+              BorderRadius.vertical(top: Radius.circular(9)),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -374,11 +374,11 @@ class _FeedScreenState extends State<FeedScreen> {
                       gaplessPlayback: true,
                       errorBuilder: (_, __, ___) => Container(
                           color: AppTheme.border,
-                          child: const Icon(Icons.style_outlined,
+                          child: Icon(Icons.style_outlined,
                               color: AppTheme.textSecondary)))
                       : Container(
                       color: AppTheme.border,
-                      child: const Icon(Icons.style_outlined,
+                      child: Icon(Icons.style_outlined,
                           color: AppTheme.textSecondary)),
                   // Badge posición
                   Positioned(
@@ -414,9 +414,9 @@ class _FeedScreenState extends State<FeedScreen> {
                         fontSize: 11, fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Row(children: [
-                  const Icon(Icons.favorite,
+                  Icon(Icons.favorite,
                       size: 11, color: AppTheme.accent),
                   const SizedBox(width: 3),
                   Text('$likes',
@@ -444,7 +444,7 @@ class _FeedScreenState extends State<FeedScreen> {
           final p = _prendas[i];
           return Container(
             width: 90,
-            margin: const EdgeInsets.only(right: 10),
+            margin: EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
               color: AppTheme.cardBg,
               borderRadius: BorderRadius.circular(8),
@@ -454,7 +454,7 @@ class _FeedScreenState extends State<FeedScreen> {
               children: [
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
+                    borderRadius: BorderRadius.vertical(
                         top: Radius.circular(7)),
                     child: p['fotoUrl'] != null && p['fotoUrl'].isNotEmpty
                         ? Image.network(p['fotoUrl'],
@@ -463,12 +463,12 @@ class _FeedScreenState extends State<FeedScreen> {
                         gaplessPlayback: true,
                         errorBuilder: (_, __, ___) => Container(
                             color: AppTheme.border,
-                            child: const Icon(Icons.checkroom_outlined,
+                            child: Icon(Icons.checkroom_outlined,
                                 size: 24,
                                 color: AppTheme.textSecondary)))
                         : Container(
                         color: AppTheme.border,
-                        child: const Icon(Icons.checkroom_outlined,
+                        child: Icon(Icons.checkroom_outlined,
                             size: 24,
                             color: AppTheme.textSecondary)),
                   ),
@@ -508,7 +508,7 @@ class _FeedScreenState extends State<FeedScreen> {
           Expanded(
             child: ClipRRect(
               borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(9)),
+              BorderRadius.vertical(top: Radius.circular(9)),
               child: _buildOutfitPreview(prendas),
             ),
           ),
@@ -525,7 +525,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 const SizedBox(height: 2),
                 Row(children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                         horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
                       color: AppTheme.border,
@@ -557,7 +557,7 @@ class _FeedScreenState extends State<FeedScreen> {
     if (fotos.isEmpty) {
       return Container(
         color: AppTheme.border,
-        child: const Center(child: Icon(Icons.style_outlined,
+        child: Center(child: Icon(Icons.style_outlined,
             size: 36, color: AppTheme.textSecondary)),
       );
     }
@@ -575,7 +575,7 @@ class _FeedScreenState extends State<FeedScreen> {
         gaplessPlayback: true,
         errorBuilder: (_, __, ___) => Container(
           color: AppTheme.border,
-          child: const Icon(Icons.checkroom_outlined,
+          child: Icon(Icons.checkroom_outlined,
               size: 18, color: AppTheme.textSecondary),
         ),
       )).toList(),
@@ -636,7 +636,7 @@ class _LikeButtonState extends State<_LikeButton> {
         Icon(_liked ? Icons.favorite : Icons.favorite_border,
             size: 14,
             color: _liked ? AppTheme.accent : AppTheme.textSecondary),
-        const SizedBox(width: 3),
+        SizedBox(width: 3),
         Text('$_count',
             style: GoogleFonts.dmSans(
                 fontSize: 10, color: AppTheme.textSecondary)),

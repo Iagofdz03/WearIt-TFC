@@ -54,7 +54,7 @@ class _OutfitFormScreenState extends State<OutfitFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_prendasSeleccionadas.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Selecciona al menos una prenda'),
+          SnackBar(content: Text('Selecciona al menos una prenda'),
               backgroundColor: AppTheme.error));
       return;
     }
@@ -103,17 +103,17 @@ class _OutfitFormScreenState extends State<OutfitFormScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _label('NOMBRE DEL OUTFIT'),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     TextFormField(
                       controller: _nombreCtrl,
                       style: GoogleFonts.dmSans(fontSize: 14),
                       validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
                       decoration: const InputDecoration(hintText: 'ej. Look oficina lunes'),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     _label('OCASIÓN'),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
@@ -135,7 +135,7 @@ class _OutfitFormScreenState extends State<OutfitFormScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -152,10 +152,10 @@ class _OutfitFormScreenState extends State<OutfitFormScreen> {
                     const Divider(height: 24),
 
                     _label('PRENDAS (${_prendasSeleccionadas.length} seleccionadas)'),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
 
                     _loadingPrendas
-                        ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+                        ? Center(child: CircularProgressIndicator(color: AppTheme.accent))
                         : _prendas.isEmpty
                         ? Container(
                       padding: const EdgeInsets.all(16),
@@ -211,7 +211,7 @@ class _OutfitFormScreenState extends State<OutfitFormScreen> {
             // Botón fijo abajo
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: AppTheme.border)),
                 color: AppTheme.background,
               ),
@@ -221,7 +221,7 @@ class _OutfitFormScreenState extends State<OutfitFormScreen> {
                   child: ElevatedButton(
                     onPressed: _loading ? null : _submit,
                     child: _loading
-                        ? const SizedBox(height: 18, width: 18,
+                        ? SizedBox(height: 18, width: 18,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                         : Text(_editMode ? 'GUARDAR CAMBIOS' : 'CREAR OUTFIT'),
                   ),

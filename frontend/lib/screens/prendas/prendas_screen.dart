@@ -192,7 +192,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
                   right: 6, top: 6,
                   child: Container(
                     width: 16, height: 16,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                         color: AppTheme.accent, shape: BoxShape.circle),
                     child: Center(
                       child: Text('$_totalFiltrosActivos',
@@ -226,7 +226,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
               style: GoogleFonts.dmSans(fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Buscar prenda...',
-                prefixIcon: const Icon(Icons.search,
+                prefixIcon: Icon(Icons.search,
                     size: 18, color: AppTheme.textSecondary),
                 suffixIcon: _busquedaCtrl.text.isNotEmpty
                     ? IconButton(
@@ -244,8 +244,8 @@ class _PrendasScreenState extends State<PrendasScreen> {
           // Panel filtros múltiples
           if (_mostrarFiltros)
             Container(
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              padding: const EdgeInsets.all(12),
+              margin: EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppTheme.cardBg,
                 borderRadius: BorderRadius.circular(8),
@@ -294,7 +294,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
           // Grid prendas
           Expanded(
             child: _loading
-                ? const Center(
+                ? Center(
                 child: CircularProgressIndicator(color: AppTheme.accent))
                 : _prendas.isEmpty
                 ? _buildEmpty()
@@ -341,7 +341,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
               onTap: () => _toggleFiltro(seleccionados, op),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                     horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: sel ? AppTheme.primary : AppTheme.background,
@@ -386,7 +386,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
             Expanded(
               child: ClipRRect(
                 borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(8)),
+                BorderRadius.vertical(top: Radius.circular(8)),
                 child: prenda['fotoUrl'] != null &&
                     prenda['fotoUrl'].isNotEmpty
                     ? Image.network(
@@ -430,7 +430,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
                     const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => _eliminarPrenda(prenda['id']),
-                      child: const Icon(Icons.delete_outline,
+                      child: Icon(Icons.delete_outline,
                           size: 16, color: AppTheme.textSecondary),
                     ),
                   ]),
@@ -450,7 +450,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.checkroom_outlined,
+            Icon(Icons.checkroom_outlined,
                 size: 36, color: AppTheme.textSecondary),
             if (prenda['color'] != null)
               Container(
@@ -485,7 +485,7 @@ class _PrendasScreenState extends State<PrendasScreen> {
   Widget _chip(String text) {
     if (text.isEmpty) return const SizedBox.shrink();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: AppTheme.border,
         borderRadius: BorderRadius.circular(3),

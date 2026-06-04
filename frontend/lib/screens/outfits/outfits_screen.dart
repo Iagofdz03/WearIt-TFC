@@ -18,6 +18,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
     with SingleTickerProviderStateMixin {
   List<dynamic> _outfits = [];
   List<dynamic> _favoritos = [];
+  List<dynamic> outfitsFav = [];
   bool _loading = true;
   int? _userId;
   late TabController _tabCtrl;
@@ -113,7 +114,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+          ? Center(child: CircularProgressIndicator(color: AppTheme.accent))
           : TabBarView(
         controller: _tabCtrl,
         children: [
@@ -132,7 +133,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
           children: [
             Icon(Icons.style_outlined, size: 64,
                 color: AppTheme.textSecondary.withOpacity(0.3)),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text('Sin outfits todavía',
                 style: GoogleFonts.cormorant(
                     fontSize: 22, color: AppTheme.textSecondary)),
@@ -164,11 +165,11 @@ class _OutfitsScreenState extends State<OutfitsScreen>
   }
 
   Widget _buildFavoritos() {
-    // Extrae los outfits del objeto favorito
-    final outfitsFav = _favoritos
-        .map((f) => f['outfit'])
-        .whereType<Map<String, dynamic>>()
-        .toList();
+    if (_favoritos.isEmpty) {
+      // Extrae los outfits del objeto favorito
+      final outfitsFav = _favoritos
+          .whereType<Map<String, dynamic>>()
+          .toList();
 
     if (outfitsFav.isEmpty) {
       return Center(
@@ -177,26 +178,27 @@ class _OutfitsScreenState extends State<OutfitsScreen>
           children: [
             Icon(Icons.star_border, size: 64,
                 color: AppTheme.textSecondary.withOpacity(0.3)),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text('Sin outfits favoritos',
                 style: GoogleFonts.cormorant(
                     fontSize: 22, color: AppTheme.textSecondary)),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text('Marca outfits con ★ para verlos aquí',
                 style: GoogleFonts.dmSans(
                     fontSize: 13, color: AppTheme.textSecondary)),
           ],
         ),
       );
-    }
+    }}
 
     return RefreshIndicator(
       onRefresh: _loadFavoritos,
       color: AppTheme.accent,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: outfitsFav.length,
-        itemBuilder: (ctx, i) => _buildOutfitTile(outfitsFav[i], esFavorito: true),
+        itemCount: _favoritos.length,
+        // ✅ pasa directamente sin extraer ['outfit']
+        itemBuilder: (ctx, i) => _buildOutfitTile(_favoritos[i], esFavorito: true),
       ),
     );
   }
@@ -207,7 +209,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
     return GestureDetector(
       onTap: () => _verOutfitCompleto(outfit),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: AppTheme.cardBg,
           borderRadius: BorderRadius.circular(8),
@@ -217,17 +219,25 @@ class _OutfitsScreenState extends State<OutfitsScreen>
           contentPadding: const EdgeInsets.all(16),
 
           leading: Container(
-            width: 52,
-            height: 52,
+            width: 52, height: 52,
             decoration: BoxDecoration(
               color: AppTheme.border,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Icon(
-              Icons.style_outlined,
-              color: AppTheme.textSecondary,
-              size: 26,
-            ),
+            child: outfit['fotoPortada'] != null && outfit['fotoPortada'].isNotEmpty
+                ? ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.network(
+                outfit['fotoPortada'],
+                fit: BoxFit.cover,
+                width: 52, height: 52,
+                errorBuilder: (_, __, ___) => Icon(
+                    Icons.style_outlined,
+                    color: AppTheme.textSecondary, size: 26),
+              ),
+            )
+                : Icon(Icons.style_outlined,
+                color: AppTheme.textSecondary, size: 26),
           ),
 
           title: Text(
@@ -275,7 +285,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
               ? null
               : PopupMenuButton<String>(
             color: AppTheme.background,
-            icon: const Icon(
+            icon: Icon(
               Icons.more_vert,
               color: AppTheme.textSecondary,
               size: 18,
@@ -299,7 +309,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
                 await ApiService.guardarHistorial(_userId!, outfit['id']);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Añadido al historial'),
                       backgroundColor: AppTheme.success,
                     ),
@@ -355,7 +365,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
           final prendas = (outfit['prendas'] as List?) ?? [];
           return Column(children: [
             Container(
-              margin: const EdgeInsets.only(top: 12),
+              margin: EdgeInsets.only(top: 12),
               width: 40, height: 4,
               decoration: BoxDecoration(
                 color: AppTheme.border,
@@ -370,7 +380,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
                   Text(outfit['nombre'] ?? '',
                       style: GoogleFonts.cormorant(
                           fontSize: 26, fontWeight: FontWeight.w400)),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(outfit['ocasion'] ?? '',
                       style: GoogleFonts.dmSans(
                           fontSize: 13, color: AppTheme.textSecondary)),
@@ -383,8 +393,8 @@ class _OutfitsScreenState extends State<OutfitsScreen>
                           color: AppTheme.textSecondary)),
                   const SizedBox(height: 10),
                   ...prendas.map((p) => Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(10),
+                    margin: EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: AppTheme.cardBg,
                       borderRadius: BorderRadius.circular(8),
@@ -399,7 +409,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
                               ? Image.network(p['fotoUrl'],
                               fit: BoxFit.contain, gaplessPlayback: true)
                               : Container(color: AppTheme.border,
-                              child: const Icon(Icons.checkroom_outlined,
+                              child: Icon(Icons.checkroom_outlined,
                                   color: AppTheme.textSecondary)),
                         ),
                       ),
@@ -427,7 +437,7 @@ class _OutfitsScreenState extends State<OutfitsScreen>
   }
 
   Widget _chip(String text, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
     decoration: BoxDecoration(
       color: color.withOpacity(0.12),
       borderRadius: BorderRadius.circular(3),

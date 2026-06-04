@@ -114,9 +114,9 @@ class _AuthScreenState extends State<AuthScreen>
                         letterSpacing: -2,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                     Container(width: 40, height: 2, color: AppTheme.accent),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     Text(
                       'Tu armario inteligente.\nOutfits perfectos cada día.',
                       style: GoogleFonts.dmSans(
@@ -153,10 +153,10 @@ class _AuthScreenState extends State<AuthScreen>
                               letterSpacing: -1,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Container(
                               width: 30, height: 2, color: AppTheme.accent),
-                          const SizedBox(height: 32),
+                          SizedBox(height: 32),
                         ],
                         Text(
                           _isLogin ? 'Bienvenido de nuevo' : 'Crear cuenta',
@@ -166,7 +166,7 @@ class _AuthScreenState extends State<AuthScreen>
                             color: AppTheme.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
                           _isLogin
                               ? 'Accede a tu armario'
@@ -174,7 +174,7 @@ class _AuthScreenState extends State<AuthScreen>
                           style: GoogleFonts.dmSans(
                               fontSize: 13, color: AppTheme.textSecondary),
                         ),
-                        const SizedBox(height: 36),
+                        SizedBox(height: 36),
                         if (!_isLogin) ...[
                           _buildField(
                             controller: _nombreCtrl,
@@ -182,7 +182,7 @@ class _AuthScreenState extends State<AuthScreen>
                             validator: (v) =>
                             v!.isEmpty ? 'Campo requerido' : null,
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                         ],
                         _buildField(
                           controller: _emailCtrl,
@@ -191,7 +191,7 @@ class _AuthScreenState extends State<AuthScreen>
                           validator: (v) =>
                           !v!.contains('@') ? 'Email inválido' : null,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         _buildField(
                           controller: _passCtrl,
                           label: 'CONTRASEÑA',
@@ -210,13 +210,13 @@ class _AuthScreenState extends State<AuthScreen>
                           validator: (v) =>
                           v!.length < 4 ? 'Mínimo 4 caracteres' : null,
                         ),
-                        const SizedBox(height: 32),
+                        SizedBox(height: 32),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _loading ? null : _submit,
                             child: _loading
-                                ? const SizedBox(
+                                ? SizedBox(
                                 height: 18,
                                 width: 18,
                                 child: CircularProgressIndicator(
@@ -226,7 +226,7 @@ class _AuthScreenState extends State<AuthScreen>
                                 : 'CREAR CUENTA'),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         Center(
                           child: TextButton(
                             onPressed: _toggle,
