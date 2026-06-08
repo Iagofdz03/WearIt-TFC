@@ -35,9 +35,7 @@ public class Outfit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
@@ -60,15 +58,12 @@ public class Outfit {
     )
     private List<Prenda> prendas = new ArrayList<>();
     
-    // ✅ RELACIÓN CON POSICIONES - ELIMINACIÓN EN CASCADA
     @OneToMany(mappedBy = "outfit", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OutfitPrendaPosicion> posiciones = new ArrayList<>();
     
-    // ✅ RELACIÓN CON FAVORITOS - ELIMINACIÓN EN CASCADA
     @OneToMany(mappedBy = "outfit", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Favorito> favoritos = new ArrayList<>();
     
-    // ✅ RELACIÓN CON LIKES - ELIMINACIÓN EN CASCADA
     @OneToMany(mappedBy = "outfit", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Like> likes = new ArrayList<>();
 
