@@ -5,6 +5,9 @@ import '../../api/api_service.dart';
 import '../auth/auth_screen.dart';
 import '../../theme/app_theme.dart';
 import '../../../main.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -41,6 +44,44 @@ class _PerfilScreenState extends State<PerfilScreen> {
       });
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+  Future<void> _exportarCSV() async {
+    if (_historial.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay historial para exportar')),
+      );
+      return;
+    }
+    try {
+      final buffer = StringBuffer();
+      buffer.writeln('Fecha,Outfit,Ocasion');
+      for (final h in _historial) {
+        final fecha = (h['fechaUso'] ?? '').toString();
+        final fechaCorta = fecha.length >= 10 ? fecha.substring(0, 10) : fecha;
+        final nombre = (h['outfit']?['nombre'] ?? '').toString().replaceAll('"', '""');
+        final ocasion = (h['outfit']?['ocasion'] ?? '').toString().replaceAll('"', '""');
+        buffer.writeln('"$fechaCorta","$nombre","$ocasion"');
+      }
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/historial_wearit.csv');
+      await file.writeAsString(buffer.toString(), encoding: utf8);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✓ CSV exportado en Documentos'),
+            backgroundColor: AppTheme.success,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al exportar: $e'),
+              backgroundColor: AppTheme.error),
+        );
+      }
     }
   }
 
@@ -90,6 +131,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
         title: const Text('Perfil'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: _editarPerfil,
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_outlined),
             onPressed: () => showDialog(
               context: context,
@@ -134,6 +179,63 @@ class _PerfilScreenState extends State<PerfilScreen> {
               _buildHistorial(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editarPerfil() async {
+    final nombreCtrl = TextEditingController(text: _usuario?['nombre'] ?? '');
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 24, right: 24, top: 24,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Editar perfil',
+                style: GoogleFonts.cormorant(fontSize: 22, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 20),
+            TextField(
+              controller: nombreCtrl,
+              style: GoogleFonts.dmSans(fontSize: 14),
+              decoration: const InputDecoration(labelText: 'NOMBRE'),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  try {
+                    await ApiService.actualizarUsuario(
+                      _userId!,
+                      nombreCtrl.text.trim(),
+                      _usuario?['fotoPerfil'],
+                    );
+                    await _loadPerfil();
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e'),
+                              backgroundColor: AppTheme.error));
+                    }
+                  }
+                },
+                child: const Text('GUARDAR'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -298,6 +400,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
             Text('${_historial.length} registros',
                 style: GoogleFonts.dmSans(
                     fontSize: 12, color: AppTheme.textSecondary)),
+            IconButton(
+              icon: Icon(Icons.download_outlined, size: 18, color: AppTheme.textSecondary),
+              onPressed: _exportarCSV,
+              tooltip: 'Exportar CSV',
+            ),
           ]),
         ),
         _historial.isEmpty

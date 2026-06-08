@@ -1,0 +1,1 @@
+ /Users/iago/AndroidStudioProjects/WearIt2/.dart_tool/flutter_build/39d898950dcb3c5a3cc5edb37979ba3b/dart_build_result.json:  /Users/iago/AndroidStudioProjects/WearIt2/.dart_tool/package_config.json /Users/iago/AndroidStudioProjects/WearIt2/pubspec.yaml /Users/iago/flutter/bin/cache/dart-sdk/version

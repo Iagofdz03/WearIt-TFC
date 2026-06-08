@@ -292,25 +292,16 @@ class ApiService {
 
   // ─── SUGERENCIAS ────────────────────────────────────────────────────────────
 
-  static Future<List<dynamic>> getSugerencias(int usuarioId) async {
-    final res = await http.get(
-      Uri.parse('$baseUrl/outfits/sugerir/$usuarioId'),
-      headers: await _headers(),
-    );
-    if (res.statusCode == 200) return jsonDecode(res.body);
-    throw Exception('Error al obtener sugerencias');
-  }
-
-  static Future<List<dynamic>> getSugerenciasTiempo(int usuarioId,
-      String? ocasion, String? temporada) async {
+  static Future<List<dynamic>> getSugerencias(int usuarioId,
+      {String? ocasion, String? temporada}) async {
     final params = <String, String>{};
-    if (ocasion != null) params['ocasion'] = ocasion;
-    if (temporada != null) params['temporada'] = temporada;
-    final uri = Uri.parse('$baseUrl/outfits/sugerir/$usuarioId/tiempo')
+    if (ocasion != null && ocasion.isNotEmpty) params['ocasion'] = ocasion;
+    if (temporada != null && temporada.isNotEmpty) params['temporada'] = temporada;
+    final uri = Uri.parse('$baseUrl/outfits/usuario/$usuarioId/sugerencias')
         .replace(queryParameters: params.isNotEmpty ? params : null);
     final res = await http.get(uri, headers: await _headers());
     if (res.statusCode == 200) return jsonDecode(res.body);
-    throw Exception('Error al obtener sugerencias por tiempo');
+    throw Exception('Error al obtener sugerencias');
   }
 
   // ─── TIEMPO ─────────────────────────────────────────────────────────────────
@@ -492,4 +483,21 @@ class ApiService {
       throw Exception('Error al cambiar tema');
     }
   }
+
+  // ─── EXPORT ─────────────────────────────────────────────────────────────────
+  static String historialToCsv(List<dynamic> historial) {
+    final buffer = StringBuffer();
+    buffer.writeln('Fecha,Outfit,Ocasion');
+    for (final h in historial) {
+      final fecha = h['fechaUso'] ?? '';
+      final nombre = h['outfit']?['nombre'] ?? '';
+      final ocasion = h['outfit']?['ocasion'] ?? '';
+      // Escapar comas
+      buffer.writeln(
+          '"${fecha.toString().substring(0, 10)}","$nombre","$ocasion"'
+      );
+    }
+    return buffer.toString();
+  }
+
 }

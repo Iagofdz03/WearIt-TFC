@@ -1,0 +1,1 @@
+ /Users/iago/AndroidStudioProjects/WearIt/.dart_tool/flutter_build/53a22529698b9abe8299b9cbb2f76469/native_assets.json: 

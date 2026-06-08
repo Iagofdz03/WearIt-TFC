@@ -34,30 +34,6 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
     await _cargarSugerencias();
   }
 
-  Future<void> _cargarSugerencias() async {
-    if (_userId == null) return;
-    setState(() => _loading = true);
-    try {
-      List<dynamic> data;
-      if (_ciudad != null && _ciudad!.isNotEmpty) {
-        data = await ApiService.getSugerenciasTiempo(
-            _userId!, _ocasionFiltro.isNotEmpty ? _ocasionFiltro : null,
-            _tiempo?['temporadaRecomendada']);
-      } else {
-        data = await ApiService.getSugerencias(_userId!);
-      }
-      if (mounted) setState(() => _sugerencias = data);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')),
-                backgroundColor: AppTheme.error));
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
   Future<void> _cargarConTiempo() async {
     if (_ciudadCtrl.text.trim().isEmpty) return;
     setState(() { _ciudad = _ciudadCtrl.text.trim(); _tiempo = null; });
@@ -281,5 +257,33 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _cargarSugerencias() async {
+    if (_userId == null) return;
+    setState(() => _loading = true);
+    try {
+      List<dynamic> data;
+      // Siempre usa el endpoint con filtros si hay ocasión o temporada
+      final ocasion = _ocasionFiltro.isNotEmpty ? _ocasionFiltro : null;
+      final temporada = _tiempo?['temporadaRecomendada'];
+
+      data = await ApiService.getSugerencias(
+        _userId!,
+        ocasion: ocasion,
+        temporada: temporada,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 }
