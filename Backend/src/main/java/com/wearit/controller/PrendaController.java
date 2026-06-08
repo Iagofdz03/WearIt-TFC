@@ -33,9 +33,8 @@ public class PrendaController {
             @RequestParam(required = false) String color,
             @RequestParam(required = false) String estilo,
             @RequestParam(required = false) String temporada,
-            @RequestParam(required = false) String estampado,
             @RequestParam(required = false) String nombre) {
-        return prendaService.filtrar(usuarioId, tipo, color, estilo, temporada, estampado, nombre);
+        return prendaService.filtrar(usuarioId, tipo, color, estilo, temporada, nombre);
     }
 
     @GetMapping("/{id}")
