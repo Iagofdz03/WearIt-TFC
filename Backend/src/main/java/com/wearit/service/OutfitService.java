@@ -25,11 +25,9 @@ public class OutfitService {
     @Autowired
     private HistorialOutfitRepository historialRepository;
     
-    // ✅ NUEVO: Repositorio para posiciones
     @Autowired
     private OutfitPrendaPosicionRepository posicionRepository;
     
-    // ✅ NUEVO: Repositorio para favoritos
     @Autowired
     private FavoritoRepository favoritoRepository;
 
