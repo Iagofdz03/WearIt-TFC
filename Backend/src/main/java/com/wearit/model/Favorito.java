@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "favorito")
@@ -19,17 +20,14 @@ public class Favorito {
 
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
-    @JsonIgnore
     private Usuario usuario;
 
     @ManyToOne
     @JoinColumn(name = "prenda_id")
-    @JsonIgnore
     private Prenda prenda;
 
     @ManyToOne
     @JoinColumn(name = "outfit_id")
-    @JsonIgnore
     private Outfit outfit;
 
     @Column(name = "fecha")
