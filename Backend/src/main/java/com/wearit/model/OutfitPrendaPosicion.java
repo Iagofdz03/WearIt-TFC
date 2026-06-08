@@ -1,6 +1,7 @@
 package com.wearit.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -18,12 +19,10 @@ public class OutfitPrendaPosicion {
 
     @ManyToOne
     @JoinColumn(name = "outfit_id", nullable = false)
-    @JsonIgnore
     private Outfit outfit;
 
     @ManyToOne
     @JoinColumn(name = "prenda_id", nullable = false)
-    @JsonIgnore
     private Prenda prenda;
 
     private double x;
