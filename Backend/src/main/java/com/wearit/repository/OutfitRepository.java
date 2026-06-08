@@ -37,4 +37,3 @@ public interface OutfitRepository extends JpaRepository<Outfit, Long> {
     
     Page<Outfit> findByEsPublicoTrue(Pageable pageable);
 }
-
