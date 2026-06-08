@@ -24,9 +24,7 @@ public class Prenda {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
@@ -35,7 +33,6 @@ public class Prenda {
     private String color;
     private String estilo;
     private String temporada;
-    private String estampado;
     private String fotoUrl;
     
     @Column(name = "foto_portada")
