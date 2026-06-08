@@ -10,8 +10,6 @@ public interface PrendaRepository extends JpaRepository<Prenda, Long> {
 
     List<Prenda> findByUsuarioId(Long usuarioId);
 
-    // Filtro dinámico con soporte para múltiples valores separados por coma
-    // Ejemplo: color="negro,blanco" busca prendas que contengan negro O blanco
     @Query("SELECT p FROM Prenda p WHERE p.usuario.id = :usuarioId " +
            "AND (:tipo IS NULL OR p.tipo = :tipo) " +
            "AND (:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
@@ -20,16 +18,13 @@ public interface PrendaRepository extends JpaRepository<Prenda, Long> {
            "AND (:estilo IS NULL OR " +
            "     p.estilo LIKE CONCAT('%', :estilo, '%')) " +
            "AND (:temporada IS NULL OR " +
-           "     p.temporada LIKE CONCAT('%', :temporada, '%')) " +
-           "AND (:estampado IS NULL OR " +
-           "     p.estampado LIKE CONCAT('%', :estampado, '%'))")
+           "     p.temporada LIKE CONCAT('%', :temporada, '%'))")
     List<Prenda> filtrar(
         @Param("usuarioId") Long usuarioId,
         @Param("tipo") String tipo,
         @Param("color") String color,
         @Param("estilo") String estilo,
         @Param("temporada") String temporada,
-        @Param("estampado") String estampado,
         @Param("nombre") String nombre
     );
 }
